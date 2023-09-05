@@ -1,11 +1,11 @@
 import dearpygui.dearpygui as dpg
 from data import extract_data
-from math import sin
 dpg.create_context()
 
-x, y, _ = extract_data()
+x, y, _ = extract_data("/home/lambda/code/synth_spectrum/data/Test_spectrum.syn")
+# Screen resolution for window scaling. dpi for correct font size.
 res_x, res_y = 1920, 1080
-CURRENT_DPI = 150
+dpi = 150
 
 with dpg.font_registry():
     # first argument ids the path to the .ttf or .otf file
@@ -19,13 +19,14 @@ with dpg.window(label="Spectra", width=int(res_x*0.8), height=int(res_y * 0.8)):
             dpg.add_theme_color(dpg.mvPlotCol_Line, (230, 0, 230), category=dpg.mvThemeCat_Plots)
             dpg.add_theme_color(dpg.mvPlotCol_Fill, (230, 0, 230, 170), category=dpg.mvThemeCat_Plots)
 
+
+    # spectrum plot part
     with dpg.plot(label="Spectrum plot", height=int(res_y*0.8), width=-1):
         dpg.add_plot_legend()
         dpg.add_plot_axis(dpg.mvXAxis, label="x")
         dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="yaxis")
 
         dpg.add_shade_series(list(x), list(y), label="Synthetic spectra", parent="yaxis", tag="syn_spectrum")
-
         # apply theme
         dpg.bind_item_theme(dpg.last_item(), "spectrum_theme_1")
 
