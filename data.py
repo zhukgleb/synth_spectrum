@@ -11,6 +11,7 @@ def extract_data(path: str) -> [np.ndarray, np.ndarray, np.ndarray]:
     red_flux = data[:, 1]
     cont = data[:, 3]
     ang.astype(float)
+    red_flux.astype(float)
     return [ang, red_flux, cont]
 
 
