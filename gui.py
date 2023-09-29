@@ -1,8 +1,17 @@
 import dearpygui.dearpygui as dpg
 from data import extract_data
+import os.path as p
 dpg.create_context()
 
-x, y, _ = extract_data("/home/lambda/code/synth_spectrum/data/Test_spectrum.syn")
+
+# Path of bad code
+filename = "Test_spectrum.syn"                                                              
+path2exe = str(p.abspath("gui.py"))
+path2data = path2exe.replace("gui.py", "")
+path2data = path2data + "data/" + filename  # Yes...it's will work only on Linux...
+
+x, y, _ = extract_data(path2data)
+
 # Screen resolution for window scaling. dpi for correct font size.
 res_x, res_y = 1920, 1080
 dpi = 150
@@ -15,9 +24,11 @@ with dpg.window(label="Spectra", width=int(res_x*0.8), height=int(res_y * 0.8)):
     # themes part
     dpg.bind_font(default_font)
     with dpg.theme(tag="spectrum_theme_1"):
-        with dpg.theme_component(0):
-            dpg.add_theme_color(dpg.mvPlotCol_Line, (230, 0, 230), category=dpg.mvThemeCat_Plots)
-            dpg.add_theme_color(dpg.mvPlotCol_Fill, (230, 0, 230, 170), category=dpg.mvThemeCat_Plots)
+        with dpg.theme_component(1):
+            dpg.add_theme_color(dpg.mvPlotCol_Line, (231, 0, 230),
+                                category=dpg.mvThemeCat_Plots)
+            dpg.add_theme_color(dpg.mvPlotCol_Fill, (230, 0, 230, 170),
+                                category=dpg.mvThemeCat_Plots)
 
 
     # spectrum plot part
@@ -26,12 +37,15 @@ with dpg.window(label="Spectra", width=int(res_x*0.8), height=int(res_y * 0.8)):
         dpg.add_plot_axis(dpg.mvXAxis, label="x")
         dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="yaxis")
 
-        dpg.add_shade_series(list(x), list(y), label="Synthetic spectra", parent="yaxis", tag="syn_spectrum")
+        dpg.add_shade_series(list(x), list(y), label="Synthetic spectra",
+                             parent="yaxis", tag="syn_spectrum")
         # apply theme
         dpg.bind_item_theme(dpg.last_item(), "spectrum_theme_1")
 
 
-dpg.create_viewport(title='Extractor', width=int(res_x*0.9), height=int(res_y*0.9))
+dpg.create_viewport(title='Extractor', width=int(res_x*0.9),
+                    height=int(res_y*0.9))
+
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()
