@@ -15,6 +15,13 @@ def extract_data(path: str) -> [np.ndarray, np.ndarray, np.ndarray]:
     return [ang, red_flux, cont]
 
 
+# Return a close array-value to value 
+def find_nearest(array: np.ndarray, value: float):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+
+
 if __name__ == "__main__":
     x ,y, _ = extract_data("data/Na5889.syn")
     plt.plot(x, y)
