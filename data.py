@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from os import path as p
 # Simply data extraction from column-like file
 # return a angstroms, flux and continuum
 
 
-def extract_data(path: str) -> [np.ndarray, np.ndarray, np.ndarray]:
+def extract_data(path: str):
     data = np.genfromtxt(path)
     ang = data[:, 0]
     red_flux = data[:, 1]
@@ -21,6 +21,13 @@ def find_nearest(array: np.ndarray, value: float):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
+
+# Temp function to define a path to files
+def get_path2(filename):
+    path2exe = str(p.abspath("gui.py"))
+    path2data = path2exe.replace("gui.py", "")
+    path2data = path2data + "data/" + filename
+    return path2data
 
 if __name__ == "__main__":
     x ,y, _ = extract_data("data/Na5889.syn")

@@ -1,14 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from data import extract_data, find_nearest
+from data import extract_data, find_nearest, get_path2
 from scipy.interpolate import CubicSpline
 from scipy.interpolate import Akima1DInterpolator
 from scipy.interpolate import PchipInterpolator
 from scipy.signal import find_peaks
 
-path = "/home/alpha/git/synth_spectrum/data/"
-ang_1, flux_1, _ = extract_data(path+"Test_spectrum.syn")
-ang_2, flux_2, _ = extract_data(path+"Test_spectrum_med.syn")
+ang_1, flux_1, _ = extract_data(get_path2("Test_spectrum.syn"))
+ang_2, flux_2, _ = extract_data(get_path2("Test_spectrum_bad.syn"))
 
 # Spectral interval
 start_ang = 4600 

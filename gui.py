@@ -1,14 +1,8 @@
 import dearpygui.dearpygui as dpg
-from data import extract_data
-import os.path as p
+from data import extract_data, get_path2
 dpg.create_context()
 
-
-# Path of bad code
-filename = "Test_spectrum.syn"                                                              
-path2exe = str(p.abspath("gui.py"))
-path2data = path2exe.replace("gui.py", "")
-path2data = path2data + "data/" + filename  # Yes...it's will work only on Linux...
+path2data = get_path2("Test_spectrum.syn")
 
 x, y, _ = extract_data(path2data)
 
