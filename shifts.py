@@ -10,17 +10,26 @@ def doppler_shift(v: float, lambda_0=5000):
     return delta_lambda
 
 
-def make_shift(data: np.ndarray, velocity: float):
-    data = data + doppler_shift(velocity)
-    pass
+def make_shift(ang: np.ndarray, velocity: float):
+    ang_shift = doppler_shift(velocity)
+    ang += ang_shift
+    return ang 
+
+
+def calculate_shift_index(ang_resolution: float, velocity: float):
+    delta_lambda = doppler_shift(velocity)
+    print(f"resolution is {ang_resolution}")
+    print(f"delta lambda is {delta_lambda}")
+    shift_index = delta_lambda // ang_resolution
+    return int(shift_index)
 
 if __name__ == "__main__":
     p = get_path2("Test_spectrum.syn")
     ang_1, flux_1, _ = extract_data(p)
     ang_2, flux_2, _ = extract_data(p)
 
-    start_ang = 4600 
-    end_ang = 6400
+    start_ang = 5000
+    end_ang = 5001
 
     index_start_1 = np.where(ang_1==start_ang)[0][0]
     index_end_1 = np.where(ang_1==end_ang)[0][0]
@@ -32,4 +41,6 @@ if __name__ == "__main__":
     ang_2 = ang_2[index_start_2:index_end_2]
     flux_2 = flux_2[index_start_2:index_end_2]
 
-    print(doppler_shift(5*1000))
+
+    ang_2 = make_shift(ang_2, 10*1000)
+
