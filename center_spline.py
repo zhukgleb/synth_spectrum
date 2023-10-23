@@ -54,9 +54,9 @@ plt.show()
 # If we have a different number of peaks
 
 if len(p1) > len(p2):
-    delta_center_arr = [abs(find_nearest(p1, p2[i]) - p2[i]) for i in range(len(p2))]
+    delta_center_arr = [find_nearest(p1, p2[i]) - p2[i] for i in range(len(p2))]
 elif len(p1) < len(p2):
-    delta_center_arr = [abs(find_nearest(p1, p2[i]) - p2[i]) for i in range(len(p1))]
+    delta_center_arr = [find_nearest(p1, p2[i]) - p2[i] for i in range(len(p1))]
 else: # If no
     delta_center_arr = [p2[i] - p2[i] for i in range(len(p1))]
 
