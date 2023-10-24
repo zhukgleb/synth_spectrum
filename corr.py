@@ -1,24 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from data import extract_data, get_path2
+from data import test_data
 from shifts import calculate_shift_index
-
-p = get_path2("Test_spectrum.syn")
-ang_1, flux_1, _ = extract_data(p)
-ang_2, flux_2, _ = extract_data(p)
 
 start_ang = 5000
 end_ang = 5010
 
-index_start_1 = np.where(ang_1==start_ang)[0][0]
-index_end_1 = np.where(ang_1==end_ang)[0][0]
-ang_1 = ang_1[index_start_1:index_end_1]
-flux_1 = flux_1[index_start_1:index_end_1]
-
-index_start_2 = np.where(ang_2==start_ang)[0][0]
-index_end_2 = np.where(ang_2==end_ang)[0][0]
-ang_2 = ang_2[index_start_2:index_end_2]
-flux_2 = flux_2[index_start_2:index_end_2]
+ang_1, flux_1 = test_data()
+ang_2, flux_2 = test_data()
 
 # Calculate shift index
 ang_resolution = ang_1[1] - ang_1[0]
