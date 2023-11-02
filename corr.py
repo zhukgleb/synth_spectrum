@@ -38,7 +38,7 @@ original_series_2 = flux_2
 
 # Create a shifted values
 shifted_versions = [
-    (original_series_1[shift_index:], original_series_2)]
+        (original_series_1, original_series_2[shift_index:])]
 
 # Function to calculate correlation
 def correlation(series_1: np.ndarray, series_2: np.ndarray):
@@ -69,11 +69,11 @@ def shift_for_maximum_correlation(series_1: np.ndarray, series_2: np.ndarray):
     lags = correlation_lags(series_1.size, series_2.size, mode="full")
     lag = lags[np.argmax(correlation_result)]
 
-    lag_corr_arr = np.column_stack((lags, correlation_result))
-    sortd_lag_corr_arr = lag_corr_arr[lag_corr_arr[:, 1].argsort()]
-    plt.title("Lag-correlation")
-    plt.plot(sortd_lag_corr_arr[:, 0], sortd_lag_corr_arr[:, 1])
-    plt.show()
+#    lag_corr_arr = np.column_stack((lags, correlation_result))
+#    sortd_lag_corr_arr = lag_corr_arr[lag_corr_arr[:, 1].argsort()]
+#    plt.title("Lag-correlation")
+#    plt.plot(sortd_lag_corr_arr[:, 0], sortd_lag_corr_arr[:, 1])
+#    plt.show()
 
     print(f"Best lag: {lag}")
     if lag < 0:
@@ -89,3 +89,16 @@ for series_1, series_2 in shifted_versions:
     # plot_correlation(shifted_series_1, shifted_series_2, text="after shifting")
     lag_ang = calculate_doppler_from_shift(ang_resolution * lag)
     print(f"lag in meters is : {lag_ang}")
+
+
+# Astropy Correlation
+from specutils.analysis import template_correlate
+from specutils import Spectrum1D
+from astropy import units as u
+
+ang_1, ang_2 = ang_1 * u.angstrom, ang_2 * u.angstrom
+
+flux_1, flux_2 = flux_1 * u.dimensionless_unscaled, flux_2 * u.dimensionless_unscaled
+spectrum_obs = Spectrum1D(spectral_axis=ang_1, flux=flux_1)
+spectrum_template = Spectrum1D(spectral_axis=ang_2, flux=flux_2)
+correlate, lags = template_correlate(spectrum_obs, spectrum_template)
