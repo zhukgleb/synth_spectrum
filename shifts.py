@@ -23,6 +23,12 @@ def calculate_shift_index(ang_resolution: float, velocity: float):
     shift_index = delta_lambda // ang_resolution
     return int(shift_index)
 
+def calculate_doppler_from_shift(ang_shift: float, lambda_0=5000):
+    return ang_shift / lambda_0 * 299792458
+
+
+    
+
 if __name__ == "__main__":
     p = get_path2("Test_spectrum.syn")
     ang_1, flux_1, _ = extract_data(p)
