@@ -1,18 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from data import test_data
+from data import test_data, test_data_ideal
 from shifts import calculate_shift_index
 
 start_ang = 5000
-end_ang = 5010
+end_ang = 5001
 
-ang_1, flux_1 = test_data()
-ang_2, flux_2 = test_data()
 
+ang_1, flux_1 = test_data(start=start_ang, end=end_ang)
+ang_2, flux_2 = test_data(start=start_ang, end=end_ang)
+
+# plt.scatter(ang_1, flux_1)
+# plt.scatter(ang_2, flux_2)
+# plt.show()
 # Calculate shift index
 ang_resolution = ang_1[1] - ang_1[0]
-shift_index = calculate_shift_index(ang_resolution, 10000)
-print(shift_index)
+shift_index = calculate_shift_index(ang_resolution, 1000)
+# print(shift_index)
 
 original_series_1 = flux_1 
 original_series_2 = flux_2
