@@ -95,10 +95,10 @@ for series_1, series_2 in shifted_versions:
 from specutils.analysis import template_correlate
 from specutils import Spectrum1D
 from astropy import units as u
+from astropy.nddata import StdDevUncertainty 
+spec_unit = u.erg / u.s / u.cm**2 / u.AA
+uncer = StdDevUncertainty(0.2*np.ones(flux_1.shape)*spec_unit)
 
-ang_1, ang_2 = ang_1 * u.angstrom, ang_2 * u.angstrom
-
-flux_1, flux_2 = flux_1 * u.dimensionless_unscaled, flux_2 * u.dimensionless_unscaled
-spectrum_obs = Spectrum1D(spectral_axis=ang_1, flux=flux_1)
-spectrum_template = Spectrum1D(spectral_axis=ang_2, flux=flux_2)
+spectrum_obs = Spectrum1D(spectral_axis=ang_1*u.AA, flux=flux_1*spec_unit, uncertainty=uncer)
+spectrum_template = Spectrum1D(spectral_axis=ang_2*u.AA, flux=flux_2*spec_unit, uncertainty=uncer)
 correlate, lags = template_correlate(spectrum_obs, spectrum_template)
