@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from os import path as p
-from shifts import doppler_shift, calculate_shift_index
-from scipy.interpolate import interp1d
 # Simply data extraction from column-like file
 # return a angstroms, flux and continuum
 
@@ -62,6 +60,8 @@ def test_data_ideal(file_name: str = "Test_spectrum.syn", start: int=4500,
 # flux 1 is observed spectrum
 # flux 2 is template spectrum
 
+
+"""
 def make_shifted_data(velocity: float):
     ang_1_original, flux_1_original = test_data()
     ang_2_original, flux_2_original = test_data_ideal()
@@ -83,7 +83,7 @@ def make_shifted_data(velocity: float):
     flux_2 = flux_2[shift_index:]
     
     return ang_1, flux_1, ang_2, flux_2
-
+"""
 
 if __name__ == "__main__":
     x ,y, _ = extract_data("data/Na5889.syn")

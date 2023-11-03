@@ -6,10 +6,11 @@ from astropy import units as u
 from astropy.nddata import StdDevUncertainty 
 from scipy.signal import correlate
 from scipy.signal import correlation_lags
+from shifts import calculate_doppler_from_shift
 
 
-start_ang = 4600
-end_ang = 5400
+start_ang = 5000
+end_ang = 5010
 velocity = 1000
 
 
@@ -50,7 +51,7 @@ def calculate_correlation(spectrum, template_spectrum, method: str="astropy"):
     lag = 0
     correlation = []
     ang_resolution = spectrum[0][1] - spectrum[0][0]
-    if method is "astropy":
+    if method == "astropy":
         # Astropy Correlation
         spec_unit = u.erg / u.s / (u.cm * u.cm) / u.AA
         uncer = StdDevUncertainty(0.2*np.ones(spectrum[1].shape)*spec_unit)
@@ -66,8 +67,9 @@ def calculate_correlation(spectrum, template_spectrum, method: str="astropy"):
         lag_corr_arr = np.column_stack((lags, correlate))
         sortd_lag_corr_arr = lag_corr_arr[lag_corr_arr[:, 1].argsort()]
         lag, correlation = sortd_lag_corr_arr[0], sortd_lag_corr_arr[1]
+        print(lag)
 
-    elif method is "scipy":
+    elif method == "scipy":
         spectrum_flux = spectrum[1] 
         template_flux = template_spectrum[1]
 
@@ -81,6 +83,6 @@ def calculate_correlation(spectrum, template_spectrum, method: str="astropy"):
 
 
 if __name__ == "__main__":
-    from data import make_shifted_data
+    from shifts import make_shifted_data
     a1, f1, a2, f2 = make_shifted_data(1000)
-    lag, corr = calculate_correlation([a1, f1], [a2, f2], "scipy")
+    lag, corr = calculate_correlation([a1, f1], [a2, f2], "astropy")
