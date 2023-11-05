@@ -27,9 +27,9 @@ def calculate_doppler_from_shift(ang_shift: float, lambda_0=5000):
     return ang_shift / lambda_0 * 299792458
 
 
-def make_shifted_data(velocity: float):
-    ang_1_original, flux_1_original = test_data()
-    ang_2_original, flux_2_original = test_data_ideal()
+def make_shifted_data(series_1, series_2, velocity: float):
+    ang_1_original, flux_1_original = series_1[0], series_1[1]
+    ang_2_original, flux_2_original = series_2[0], series_2[1]
 
     ds = doppler_shift(velocity)
     ang_resolution = ang_1_original[1] - ang_1_original[0]
@@ -46,7 +46,7 @@ def make_shifted_data(velocity: float):
     ang_resolution = ang_1[1] - ang_1[0]
     shift_index = calculate_shift_index(ang_resolution, velocity)
     flux_2 = flux_2[shift_index:]
-    
+    ang_2 = ang_2
     print(len(ang_1), len(flux_1), len(ang_1), len(flux_2))
     return ang_1, flux_1, ang_2, flux_2
     
@@ -71,5 +71,3 @@ if __name__ == "__main__":
 
 
     ang_2 = make_shift(ang_2, 10*1000)
-
-

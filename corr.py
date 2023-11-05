@@ -9,8 +9,8 @@ from scipy.signal import correlation_lags
 from shifts import calculate_doppler_from_shift
 
 
-start_ang = 5000
-end_ang = 5010
+start_ang = 4500
+end_ang = 5500
 velocity = 1000
 
 
@@ -47,42 +47,63 @@ def shift_for_maximum_correlation(series_1: np.ndarray, series_2: np.ndarray):
     return series_1, series_2, lag
 
 
-def calculate_correlation(spectrum, template_spectrum, method: str="astropy"):
+def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astropy"):
     lag = 0
     correlation = []
-    ang_resolution = spectrum[0][1] - spectrum[0][0]
-    if method == "astropy":
-        # Astropy Correlation
-        spec_unit = u.erg / u.s / (u.cm * u.cm) / u.AA
-        uncer = StdDevUncertainty(0.2*np.ones(spectrum[1].shape)*spec_unit)
+    ang_resolution = spectrum_np[0][1] - spectrum_np[0][0]
 
-        spectrum = Spectrum1D(spectral_axis=spectrum[0]*u.AA,
-                                  flux=spectrum[1]*spec_unit,
-                                  uncertainty=uncer)
-        template_spectrum = Spectrum1D(spectral_axis=template_spectrum[0]*u.AA,
-                                       flux=template_spectrum[1]*spec_unit,
-                                       uncertainty=uncer)
+    if method == "astropy":
+        
+        spectrum_sp = spectrum_np[0]
+        spectrum_flux = spectrum_np[1]
+        template_sp = spectrum_np[0]
+        template_flux = spectrum_np[1]
+
+        spec_unit = u.Unit('erg cm-2 s-1 AA-1') 
+        shift_unit = u.AA / u.s
+        unc_arr = [0.1 for x in range(len(spectrum_flux))]
+        unc = StdDevUncertainty(unc_arr, unit=spec_unit)
+
+        spectrum = Spectrum1D(spectral_axis=spectrum_sp*u.AA,
+                                  flux=spectrum_flux*spec_unit, uncertainty=unc)
+        template_spectrum = Spectrum1D(spectral_axis=template_sp*u.AA, 
+                                       flux=template_flux*spec_unit)
+
         correlate, lags = template_correlate(spectrum, template_spectrum,
-                                             lag_units=u.dimensionless_unscaled)
+                                             lag_units=shift_unit)
         lag_corr_arr = np.column_stack((lags, correlate))
         sortd_lag_corr_arr = lag_corr_arr[lag_corr_arr[:, 1].argsort()]
         lag, correlation = sortd_lag_corr_arr[0], sortd_lag_corr_arr[1]
-        print(lag)
 
     elif method == "scipy":
-        spectrum_flux = spectrum[1] 
-        template_flux = template_spectrum[1]
+        spectrum_flux = spectrum_np[1] 
+        template_flux = template_spectrum_np[1]
 
         shifted_spectrum, shifted_template, index_lag = shift_for_maximum_correlation(spectrum_flux, template_flux)
         plot_correlation(shifted_spectrum, shifted_template, text="after shifting")
         lag = calculate_doppler_from_shift(ang_resolution * index_lag)
         print(f"lag in meters is : {lag}")
-        
+
+    else:
+        # resample
+        pass
+
+
  
     return lag, correlation
 
 
+
+
+
+
 if __name__ == "__main__":
     from shifts import make_shifted_data
-    a1, f1, a2, f2 = make_shifted_data(1000)
-    lag, corr = calculate_correlation([a1, f1], [a2, f2], "astropy")
+    from data import test_data, test_data_ideal
+    a1, f1 = test_data() 
+    a2, f2 = test_data()
+    set_1 = [a1, f1]
+    set_2 = [a2, f2]
+    a1, f1, a2, f2 = make_shifted_data(set_1, set_2, velocity)
+    lag, corr = calculate_correlation(set_1, set_2, "scipy")
+    print(lag)

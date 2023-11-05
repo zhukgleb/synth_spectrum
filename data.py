@@ -5,10 +5,12 @@ from os import path as p
 # return a angstroms, flux and continuum
 
 
-def extract_data(path: str):
+def extract_data(path: str, text=False):
     data = np.genfromtxt(path)
     ang = data[:, 0]
     red_flux = data[:, 1]
+    if text:
+        return [ang, red_flux]
     cont = data[:, 3]
     ang.astype(float)
     red_flux.astype(float)
