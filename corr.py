@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from specutils.analysis import template_correlate
+
+from specutils import analysis
+
 from specutils import Spectrum1D
 from astropy import units as u
 from astropy.nddata import StdDevUncertainty 
@@ -8,9 +10,8 @@ from scipy.signal import correlate
 from scipy.signal import correlation_lags
 from shifts import calculate_doppler_from_shift
 
-
-start_ang = 4500
-end_ang = 5500
+start_ang = 4000.0
+end_ang = 8000.0
 velocity = 1000
 
 
@@ -47,33 +48,53 @@ def shift_for_maximum_correlation(series_1: np.ndarray, series_2: np.ndarray):
     return series_1, series_2, lag
 
 
-def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astropy"):
+def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astropy",
+                          dots_mult: int=10):
     lag = 0
-    correlation = []
+    corr = []
     ang_resolution = spectrum_np[0][1] - spectrum_np[0][0]
+    
+    a_spectrum = spectrum_np[0]
+    f_spectrum = spectrum_np[1]
+    a_template = template_spectrum_np[0]
+    f_template = template_spectrum_np[1]
+
 
     if method == "astropy":
-        
-        spectrum_sp = spectrum_np[0]
-        spectrum_flux = spectrum_np[1]
-        template_sp = spectrum_np[0]
-        template_flux = spectrum_np[1]
+        obs_crop = np.where((a_spectrum >= start_ang) & (a_spectrum <= end_ang))
+        template_crop = np.where((a_template >= start_ang) & (a_template <= end_ang))
 
-        spec_unit = u.Unit('erg cm-2 s-1 AA-1') 
-        shift_unit = u.AA / u.s
-        unc_arr = [0.1 for x in range(len(spectrum_flux))]
-        unc = StdDevUncertainty(unc_arr, unit=spec_unit)
+        a_spectrum = a_spectrum[obs_crop]
+        f_spectrum = f_spectrum[obs_crop]
+        a_template = a_template[template_crop]
+        f_template = f_template[template_crop]
 
-        spectrum = Spectrum1D(spectral_axis=spectrum_sp*u.AA,
-                                  flux=spectrum_flux*spec_unit, uncertainty=unc)
-        template_spectrum = Spectrum1D(spectral_axis=template_sp*u.AA, 
-                                       flux=template_flux*spec_unit)
 
-        correlate, lags = template_correlate(spectrum, template_spectrum,
-                                             lag_units=shift_unit)
-        lag_corr_arr = np.column_stack((lags, correlate))
-        sortd_lag_corr_arr = lag_corr_arr[lag_corr_arr[:, 1].argsort()]
-        lag, correlation = sortd_lag_corr_arr[0], sortd_lag_corr_arr[1]
+        flux_unit = u.Unit('erg s^-1 cm^-2 AA^-1')
+        unc = [0.0001 for x in range(len(f1))]
+
+        plt.plot(a_spectrum, f_spectrum) 
+        plt.plot(a_template, f_template)
+        plt.show()
+
+        template = Spectrum1D(spectral_axis=a_template*u.AA, flux=f_template*flux_unit)
+        observed = Spectrum1D(spectral_axis=a1*u.AA, flux=f1*flux_unit, uncertainty=StdDevUncertainty(unc))
+
+        corr, lag = analysis.correlation.template_correlate(observed, template, lag_units=u.one)
+
+        plt.plot(lag, corr)
+        plt.xlim([-0.1,0.1])
+        plt.xlabel("Redshift")
+        plt.ylabel("Correlation Signal")
+        plt.show()
+
+        z_peak = lag[np.where(corr==np.max(corr))][0]
+        calculate_velocity = z_peak * 299792458
+
+        print(z_peak)
+        print(f"calculate speed is {calculate_velocity}")
+
+
 
     elif method == "scipy":
         spectrum_flux = spectrum_np[1] 
@@ -87,23 +108,12 @@ def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astrop
     else:
         # resample
         pass
-
-
  
-    return lag, correlation
-
-
-
-
+    return lag, corr
 
 
 if __name__ == "__main__":
-    from shifts import make_shifted_data
-    from data import test_data, test_data_ideal
-    a1, f1 = test_data() 
-    a2, f2 = test_data()
-    set_1 = [a1, f1]
-    set_2 = [a2, f2]
-    a1, f1, a2, f2 = make_shifted_data(set_1, set_2, velocity)
-    lag, corr = calculate_correlation(set_1, set_2, "scipy")
-    print(lag)
+    from data import extract_data
+    a1, f1 = extract_data("data/model1_shift1.data", text=True)
+    a_template, f_template = extract_data("data/model1_noshift.data", text=True)
+    calculate_correlation([a1, f1], [a_template, f_template])
