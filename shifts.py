@@ -3,17 +3,36 @@ import numpy as np
 from scipy.interpolate import interp1d
 from data import test_data, test_data_ideal
 
+c = 299792458
+
+
 def doppler_shift(v: float, lambda_0=5000):
     # speed of light in meters in seconds
-    c = 299792458
     delta_lambda = lambda_0 * (v / c)
     return delta_lambda
+
+
+def make_doppler_shift(wave_arr: np.ndarray, flux,  velocity: float=350*1000):
+    wave_shifted = wave_arr * (1.0 + velocity / c)
+    fv = np.nan
+    n_flux = interp1d(wave_shifted, flux, bounds_error=False, fill_value=fv)(wave_arr)
+    nin = ~np.isnan(n_flux)
+    if not nin[0]:
+        # First element is invalid (NaN)
+        # Find index of first valid (not NaN) element
+        fvindex = np.argmax(nin)
+        # Replace leading elements
+        n_flux[0:fvindex] = n_flux[fvindex]
+
+    return wave_shifted, n_flux
 
 
 def make_shift(ang: np.ndarray, velocity: float):
     ang_shift = doppler_shift(velocity)
     ang += ang_shift
     return ang 
+
+
 
 
 def calculate_shift_index(ang_resolution: float, velocity: float):

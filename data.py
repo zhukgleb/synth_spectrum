@@ -1,9 +1,9 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from os import path as p
+
+
 # Simply data extraction from column-like file
 # return a angstroms, flux and continuum
-
 
 def extract_data(path: str, text=False):
     data = np.genfromtxt(path)
@@ -86,8 +86,3 @@ def make_shifted_data(velocity: float):
     
     return ang_1, flux_1, ang_2, flux_2
 """
-
-if __name__ == "__main__":
-    x ,y, _ = extract_data("data/Na5889.syn")
-    plt.plot(x, y)
-    plt.show()
