@@ -1,4 +1,4 @@
-from data import extract_data, get_path2 
+from data import extract_data, get_path2
 import numpy as np
 from scipy.interpolate import interp1d
 from data import test_data, test_data_ideal
@@ -31,8 +31,6 @@ def make_shift(ang: np.ndarray, velocity: float):
     ang_shift = doppler_shift(velocity)
     ang += ang_shift
     return ang 
-
-
 
 
 def calculate_shift_index(ang_resolution: float, velocity: float):
