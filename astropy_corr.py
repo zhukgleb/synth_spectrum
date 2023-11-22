@@ -11,12 +11,12 @@ from corr import calculate_correlation
 
 a1, f1 = extract_data("data/model1_shift350.data", text=True)
 a_template, f_template = extract_data("data/model1_noshift.data", text=True)
+
 aa_start = 2000.0
 aa_end = 9000.0
 
 obs_crop = np.where((a1 >= aa_start) & (a1 <= aa_end))
 template_crop = np.where((a_template >= aa_start) & (a_template <= aa_end))
-
 
 a1 = a1[obs_crop]
 f1 = f1[obs_crop]
@@ -47,3 +47,16 @@ calculate_velocity = z_peak * 299792458
 
 print(z_peak)
 print(f"calculate speed is {calculate_velocity}")
+
+
+n = 8 # points to the left or right of correlation maximum
+index_peak = np.where(corr == np.amax(corr))[0][0]
+peak_lags = lag[index_peak-n:index_peak+n+1].value
+peak_vals = corr[index_peak-n:index_peak+n+1].value
+p = np.polyfit(peak_lags, peak_vals, deg=2)
+roots = np.roots(p)
+v_fit = np.mean(roots) * u.km/u.s # maximum lies at mid point between roots
+# z = v_fit / const.c.to('km/s')
+z = 0
+print("Parabolic fit with maximum at: ", v_fit)
+print("Redshift from parabolic fit: ", z)
