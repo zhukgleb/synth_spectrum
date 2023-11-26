@@ -7,9 +7,9 @@ from specutils import Spectrum1D
 from specutils.analysis import correlation
 from resolution import increese_resolution
 import PyAstronomy.pyasl as pyasl
-import astropy.constants as const
 
-def find_speed(spectrum: list, template: list, inter: list, mult: int):
+
+def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
     template_ang = template[0]
@@ -64,10 +64,6 @@ def find_speed(spectrum: list, template: list, inter: list, mult: int):
  #       plt.show()
     return calculate_velocity, z
 
-        
-#        _, specturm_ang = pyasl.dopplerShift(spectrum_ang, spectrum_flux, -calculate_velocity/1000, edgeHandling="firstlast")
-    print(f"total velocity sum is: {sum(speed_arr)}")
-
 
 if __name__ == "__main__":
     s2 = extract_data("data/NES_model_110000.rgs", text=True)
@@ -87,11 +83,11 @@ if __name__ == "__main__":
         velocity = []
         z_velocity = []
         true_velocity = []
-        for j in range(1, 10):
+        for j in range(1, 100):
             print(f"speed is {j} meters")
             _, spectrum_arr[i][0] = pyasl.dopplerShift(spectrum_arr[i][0], spectrum_arr[i][1], j/1000, edgeHandling="firstlast")
             mult = 50
-            cv, z = find_speed(spectrum_arr[i], [a_template, f_template], [5000, 5100], mult)
+            cv, z = find_velocity(spectrum_arr[i], [a_template, f_template], [5000, 5100], mult)
             velocity.append(cv)
             z_velocity.append(z)
             true_velocity.append(j)
