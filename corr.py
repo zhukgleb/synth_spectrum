@@ -15,7 +15,7 @@ from resolution import increese_resolution
 
 
 start_ang = 4500
-end_ang = 6500
+end_ang = 5500
 # start_ang = 5000
 # end_ang = 6500
 
@@ -57,7 +57,7 @@ def shift_for_maximum_correlation(series_1: np.ndarray, series_2: np.ndarray):
 
 
 def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astropy",
-                          dots_mult: int=10):
+                          dots_mult: int=50):
     lag = 0
     corr = []
     
@@ -79,8 +79,6 @@ def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astrop
     a_spectrum, f_spectrum = increese_resolution([a_spectrum, f_spectrum], dots_mult)
     a_template, f_template = increese_resolution([a_template, f_template], dots_mult)
 
-
-
     # resample 
     flux_unit = u.Unit('erg s^-1 cm^-2 AA^-1')
     wblue = start_ang
@@ -93,6 +91,7 @@ def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astrop
     dw = ds[np.argmin(ds)]
     a = np.mean(ds)
     print(a)
+    print(dw)
 
     nsamples = int((w1 - w0) / dw)
     log_wave_array = np.ones(nsamples) * w0 
@@ -101,7 +100,7 @@ def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astrop
         log_wave_array[i] += dw * i
 
     wave_array = np.power(10., log_wave_array) * u.AA
-    unc = [0.0001 for x in range(len(f_spectrum))]
+    unc = [1e-6 for x in range(len(f_spectrum))]
     spectrum = Spectrum1D(spectral_axis=a_spectrum*u.AA, flux=f_spectrum*flux_unit, uncertainty=StdDevUncertainty(unc))
     template = Spectrum1D(spectral_axis=a_template*u.AA, flux=f_template*flux_unit)
     import specutils
@@ -133,6 +132,17 @@ def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astrop
     corr = correlate(clean_spectrum_flux, clean_template_flux, method="direct")
     lags = correlation_lags(clean_spectrum_flux.size, clean_template_flux.size, mode="full")
     lag = lags[np.argmax(corr)]
+
+    wave_l = clean_spectrum.spectral_axis.value 
+    delta_log_wave = np.log10(wave_l[1]) - np.log10(wave_l[0])
+    deltas = (np.array(range(len(corr))) - len(corr)/2 + 0.5) * delta_log_wave
+    lags_as = np.power(10., deltas) - 1.
+    temp_val = lags_as[np.argmax(corr)] * 299792458
+    print(temp_val)
+
+
+
+
 
     lag_corr_arr = np.column_stack((lags, corr))
     sortd_lag_corr_arr = lag_corr_arr[lag_corr_arr[:, 1].argsort()]
@@ -175,10 +185,15 @@ def calculate_correlation(spectrum_np, template_spectrum_np, method: str="astrop
 if __name__ == "__main__":
     from data import extract_data, test_data, test_data_ideal
     from shifts import make_doppler_shift
-    a1, f1 = extract_data("data/model1_shift350_rightversion.data", text=True)
+#     a1, f1 = extract_data("data/model1_shift350.data", text=True)
 #    a1, f1 = make_doppler_shift(a1, f1, 350 * 1000)
 #    a1, f1 = test_data()
 #    a_template, f_template = test_data_ideal()
 #    a1, f1 = make_doppler_shift(a1, f1, 350*1000) 
-    a_template, f_template = extract_data("data/model1_noshift.data", text=True)
+#
+#    a_template, f_template = extract_data("data/model1_noshift.data", text=True)
+
+    a1, f1 = extract_data("models/Good_model.rgs", text=True)
+    a_template, f_template = extract_data("models/Good_model.syn", text=True)
+    a1, f1 = make_doppler_shift(a1, f1, 1000)
     calculate_correlation([a1, f1], [a_template, f_template], method="scipy")
