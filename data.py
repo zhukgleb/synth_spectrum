@@ -32,7 +32,6 @@ def get_path2(filename):
     return path2data
 
 
-
 # Return a simple test data. Tempo foo
 def test_data(file_name: str = "Test_spectrum_med.syn", start: int=4500,
               end: int=5400):
@@ -62,6 +61,17 @@ def test_data_ideal(file_name: str = "Test_spectrum.syn", start: int=4500,
 # flux 1 is observed spectrum
 # flux 2 is template spectrum
 
+
+def test_data_template(file_name: str = "Test_spectrum.syn", start: int=4500,
+              end: int=5400):
+    p = get_path2(file_name)
+    ang, flux, _ = extract_data(p)
+    index_start_1 = np.where(ang==start)[0][0]
+    index_end_1 = np.where(ang==end)[0][0]
+    ang = ang[index_start_1:index_end_1]
+    flux = flux[index_start_1:index_end_1]
+
+    return ang, flux
 
 """
 def make_shifted_data(velocity: float):
