@@ -21,6 +21,9 @@ total_velocity_data = []
 total_delta = []
 total_delta_inter = []
 
+v = 30000  # in meters
+dots = 50
+
 for i in range(len(spectrum_arr)):
     velocity = []
     z_velocity = []
@@ -29,9 +32,9 @@ for i in range(len(spectrum_arr)):
     delta_inter = []
     # Now, make a variance between arrays -- add some noise
     # from SN 1 to 100
-    for j in range(100, 101):
+    for j in range(1, 100):
        print(f"speed is {j} meters")
-       _, spectrum_arr[i][0] = pyasl.dopplerShift(spectrum_arr[i][0], spectrum_arr[i][1], 20/1000, edgeHandling="firstlast")
+       _, spectrum_arr[i][0] = pyasl.dopplerShift(spectrum_arr[i][0], spectrum_arr[i][1], v/1000, edgeHandling="firstlast")
        
        noise_spectrum = np.copy(spectrum_arr[i][1])
        noise = np.random.normal(loc=1, scale=1/j, size=len(spectrum_arr[i][1]))
@@ -40,14 +43,14 @@ for i in range(len(spectrum_arr)):
 #       plt.plot(spectrum_arr[i][0], noise_spectrum)
 #       plt.show()
 
-       cv, z = find_velocity([spectrum_arr[i][0], noise_spectrum], [a_template, f_template], [5000, 5100], 50)
+       cv, z = find_velocity([spectrum_arr[i][0], noise_spectrum], [a_template, f_template], [5000, 5100], dots)
        velocity.append(cv)
        z_velocity.append(z)
        SN.append(j)
-       delta_inter.append(20 - z)  # For delta graph
-       delta.append(20 - cv) 
+       delta_inter.append(v - z)  # For delta graph
+       delta.append(v - cv) 
     
-       _, spectrum_arr[i][0] = pyasl.dopplerShift(spectrum_arr[i][0], spectrum_arr[i][1], -20/1000, edgeHandling="firstlast")
+       _, spectrum_arr[i][0] = pyasl.dopplerShift(spectrum_arr[i][0], spectrum_arr[i][1], -v/1000, edgeHandling="firstlast")
        del noise_spectrum
  
 
