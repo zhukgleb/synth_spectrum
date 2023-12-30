@@ -3,7 +3,7 @@ from velocity import find_velocity
 import PyAstronomy.pyasl as pyasl
 import numpy as np
 import matplotlib.pyplot as plt
-from data import test_data
+from sys import getsizeof
 
 
 # s2 = extract_data("data/NES_model_110000.rgs", text=True)
@@ -12,20 +12,21 @@ s3 = extract_data("data/NES_model_60000.rgs", text=True)
 s5 = extract_data("data/NES_model_15000.rgs", text=True)
 a_template, f_template = extract_data("data/NES_model_110000.rgs", text=True)
 
-spectrum_arr = [s3, s5] 
+spectrum_arr = [s3]
+# spectrum_arr = [[a_template, f_template]]
 spectrum_names = ["R=60000 inter", "R=15000 inter"]
 spectrum_names_direct = ["R=60000","R=15000"]
-
+# cv, z = find_velocity([a_template, f_template], [a_template, f_template],
+#                              [4600, 5400], 50)
 
 total_velocity_data = []
 total_delta = []
 total_delta_inter = []
 
-v = 300 * 1000  # in meters
-dots = 50
+v = 20*1000 # in meters
+dots = 100
 
 for i in range(len(spectrum_arr)):
-    print(spectrum_names[i])
     velocity = []
     z_velocity = []
     SN = []
@@ -33,26 +34,25 @@ for i in range(len(spectrum_arr)):
     delta_inter = []
     # Now, make a variance between arrays -- add some noise
     # from SN 1 to 100
-    for j in range(1, 101, 10):
+
+    for j in range(70, 71, 1):
        print(f"SN is {j}")
        ang = np.copy(spectrum_arr[i][0])
        flux = np.copy(spectrum_arr[i][1])
+#       print(round(getsizeof(flux) / 1024 / 1024,2))
 
        _, ang = pyasl.dopplerShift(ang, flux, v/1000, edgeHandling="firstlast")
        noise_spectrum = np.copy(flux)
-       noise = np.random.normal(loc=1, scale=1/j, size=len(flux))
+       noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
        noise_spectrum = noise_spectrum + noise
-#       import matplotlib.pyplot as plt
-#       plt.plot(spectrum_arr[i][0], noise_spectrum)
-#       plt.show()
-
-       cv, z = find_velocity([ang, noise_spectrum], [a_template, f_template], [5000, 5100], dots)
+       cv, z = find_velocity([ang, noise_spectrum], [a_template, f_template],
+                             [4500, 5000], dots)
        velocity.append(cv)
        z_velocity.append(z)
        SN.append(j)
        delta_inter.append(v - z)  # For delta graph
-       delta.append(v - cv) 
-    
+       delta.append(v - cv)
+
        del noise_spectrum
        del ang
        del flux
