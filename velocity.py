@@ -7,8 +7,8 @@ from specutils.analysis import correlation
 from resolution import increese_resolution
 
 
-def gaussian_function(x, amplitude, mean, sigma):
-    return amplitude * np.exp(-(x - mean)**2 / (2 * sigma**2)) + 0.95
+def gaussian_function(x, amplitude, mean, sigma, shift):
+    return amplitude * np.exp(-(x - mean)**2 / (2 * sigma**2)) + shift
 
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
@@ -101,25 +101,27 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     corr_template = corr_template[autocorr_crop]
     lag_template = lag_template[autocorr_crop]
 
-    initial_guess = [max(corr_template), 0, 1] # Initial guess for template-template correlation
+    initial_guess = [max(corr_template), 0, 1, 0.90] # Initial guess for template-template correlation
 #    fit_params, covariance = curve_fit(gaussian_function, lag_template*299792458, corr_template, p0=initial_guess, bounds=([0, -np.inf, 0], [np.inf, np.inf, np.inf]))
 #     fit_params, covariance = curve_fit(gaussian_function, peak_lags*299792458, peak_vals, p0=initial_guess, bounds=([0, -np.inf, 0], [np.inf, np.inf, np.inf]))
-    fit_params, covariance = curve_fit(gaussian_function, lag_template*299792458, corr_template, p0=initial_guess, bounds=([0, -np.inf, 0], [np.inf, np.inf, np.inf]))
+    fit_params, covariance = curve_fit(gaussian_function, lag_template*299792458, corr_template, p0=initial_guess)
 
-    fit_sigma = fit_params[2]
-    print(fit_sigma)
+    fit_sigma_t = fit_params[2]
+    print(fit_sigma_t)
     plt.plot(lag_template*299792458, gaussian_function(lag_template*299792458, *fit_params), 'r-', label='fit')
     plt.plot(lag_template*299792458, corr_template)
     plt.xlabel("Correlation speed, m/s")
     plt.ylabel("Correlation Signal")
     plt.show()
 
-    corr_crop = np.where((lag*299792458 >= 5*1000) & (lag*299792458<= 40*1000))
+
+    # cut-off observed-template correlation
+    corr_crop = np.where((lag*299792458 >= z-wings_t) & (lag*299792458<= z+wings_t))
     corr = corr[corr_crop]
     lag = lag[corr_crop]
 
-    initial_guess = [1, 20*1000, 5000]
-    fit_params, covariance = curve_fit(gaussian_function, peak_lags*299792458, peak_vals, p0=initial_guess, bounds=([0, -np.inf, 0], [np.inf, np.inf, np.inf]))
+    initial_guess = [max(corr), z, 3000, 0.96]
+    fit_params, covariance = curve_fit(gaussian_function, peak_lags*299792458, peak_vals, p0=initial_guess)
     fit_sigma = fit_params[2]
     print(fit_sigma)
     plt.plot(lag*299792458, gaussian_function(lag*299792458, *fit_params), 'r-', label='fit')
@@ -127,5 +129,9 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     plt.xlabel("Correlation speed, m/s")
     plt.ylabel("Correlation Signal")
     plt.show()
+    z_err = abs(sigma**2 - sigma_t**2)
+    print(z_err**0.5 * z)
+    z_err = 0.1
+    
 
-    return calculate_velocity, z
+    return calculate_velocity, z, z_err

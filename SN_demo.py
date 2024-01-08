@@ -32,10 +32,11 @@ for i in range(len(spectrum_arr)):
     SN = []
     delta = []
     delta_inter = []
+    z_err_arr = []
     # Now, make a variance between arrays -- add some noise
     # from SN 1 to 100
 
-    for j in range(70, 71, 1):
+    for j in range(300, 301, 1):
        print(f"SN is {j}")
        ang = np.copy(spectrum_arr[i][0])
        flux = np.copy(spectrum_arr[i][1])
@@ -45,13 +46,14 @@ for i in range(len(spectrum_arr)):
        noise_spectrum = np.copy(flux)
        noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
        noise_spectrum = noise_spectrum + noise
-       cv, z = find_velocity([ang, noise_spectrum], [a_template, f_template],
+       cv, z, z_err = find_velocity([ang, noise_spectrum], [a_template, f_template],
                              [4500, 5000], dots)
        velocity.append(cv)
        z_velocity.append(z)
        SN.append(j)
        delta_inter.append(v - z)  # For delta graph
        delta.append(v - cv)
+       z_err_arr.append(z_err)
 
        del noise_spectrum
        del ang
@@ -77,7 +79,7 @@ fig, ax = plt.subplots(figsize=(WIDTH/DPI, HEIGHT/DPI), dpi=DPI)
 linestyle = ['solid', "dashed"]
 
 for i in range(len(spectrum_arr)):
-    ax.plot(SN, total_delta_inter[i], color="k", linestyle=linestyle[i], label=spectrum_names_direct[i])
+    ax.errorbar(SN, total_delta_inter[i], z_err_arr[i], color="k", linestyle=linestyle[i], label=spectrum_names_direct[i])
 
 plt.title(f"Delta graph for {v} m/s")
 plt.xlabel("S/N", fontsize=14)
