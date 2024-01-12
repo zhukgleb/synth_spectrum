@@ -12,6 +12,7 @@ def gaussian_function(x, amplitude, mean, sigma, shift):
 
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
+    plot = False
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
     template_ang = template[0]
@@ -108,11 +109,12 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
 
     fit_sigma_t = fit_params[2]
     print(fit_sigma_t)
-    plt.plot(lag_template*299792458, gaussian_function(lag_template*299792458, *fit_params), 'r-', label='fit')
-    plt.plot(lag_template*299792458, corr_template)
-    plt.xlabel("Correlation speed, m/s")
-    plt.ylabel("Correlation Signal")
-    plt.show()
+    if plot:
+        plt.plot(lag_template*299792458, gaussian_function(lag_template*299792458, *fit_params), 'r-', label='fit')
+        plt.plot(lag_template*299792458, corr_template)
+        plt.xlabel("Correlation speed, m/s")
+        plt.ylabel("Correlation Signal")
+        plt.show()
 
 
     # cut-off observed-template correlation
@@ -124,14 +126,15 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     fit_params, covariance = curve_fit(gaussian_function, peak_lags*299792458, peak_vals, p0=initial_guess)
     fit_sigma = fit_params[2]
     print(fit_sigma)
-    plt.plot(lag*299792458, gaussian_function(lag*299792458, *fit_params), 'r-', label='fit')
-    plt.plot(lag*299792458, corr)
-    plt.xlabel("Correlation speed, m/s")
-    plt.ylabel("Correlation Signal")
-    plt.show()
+    if plot:
+        plt.plot(lag*299792458, gaussian_function(lag*299792458, *fit_params), 'r-', label='fit')
+        plt.plot(lag*299792458, corr)
+        plt.xlabel("Correlation speed, m/s")
+        plt.ylabel("Correlation Signal")
+        plt.show()
     z_err = abs(sigma**2 - sigma_t**2)
     print(z_err**0.5 * z)
-    z_err = 0.1
+    z_err = z_err**0.5 
     
 
     return calculate_velocity, z, z_err
