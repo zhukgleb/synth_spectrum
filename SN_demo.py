@@ -3,87 +3,94 @@ from velocity import find_velocity
 import PyAstronomy.pyasl as pyasl
 import numpy as np
 import matplotlib.pyplot as plt
-from sys import getsizeof
+from memory_profiler import profile
 
 
+@profile
+def make_good():
 # s2 = extract_data("data/NES_model_110000.rgs", text=True)
-s3 = extract_data("data/NES_model_60000.rgs", text=True)
+    s3 = extract_data("data/NES_model_60000.rgs", text=True)
 # s4 = extract_data("data/NES_model_40000.rgs", text=True)
-s5 = extract_data("data/NES_model_15000.rgs", text=True)
-a_template, f_template = extract_data("data/NES_model_110000.rgs", text=True)
+#s5 = extract_data("data/NES_model_15000.rgs", text=True)
+    a_template, f_template = extract_data("data/NES_model_110000.rgs", text=True)
 
-spectrum_arr = [s3, s3, s3, s3, s3, s3, s3, s3, s3, s3]
+# spectrum_arr = [s3, s3, s3, s3, s3, s3, s3, s3, s3, s3]
+# spectrum_arr = [s5, s5, s5, s5, s5, s5, s5, s5, s5, s5]
+    spectrum_arr = [s3]
 # spectrum_arr = [[a_template, f_template]]
-spectrum_names = ["R=60000 inter", "R=15000 inter"]
-spectrum_names_direct = ["R=60000", "R=60000", "R=60000", "R=60000", "R=60000","R=60000","R=60000","R=60000","R=60000","R=60000"]
-# cv, z = find_velocity([a_template, f_template], [a_template, f_template],
-#                              [4600, 5400], 50)
+    spectrum_names = ["R=60000 inter", "R=15000 inter"]
+    spectrum_names_direct = ["R=60000", "R=60000", "R=60000", "R=60000", "R=60000","R=60000","R=60000","R=60000","R=60000","R=60000"]
+# spectrum_names_direct = ["R=15000", "R=15000", "R=15000", "R=15000", "R=15000","R=15000","R=15000","R=15000","R=15000","R=15000"]
 
-total_velocity_data = []
-total_delta = []
-total_delta_inter = []
+    total_velocity_data = []
+    total_delta = []
+    total_delta_inter = []
+    total_velocity_err = []
 
-v = 20 # in meters
-dots = 100
+    v = 20 # in meters
+    dots = 200
+    plot = False
 
-for i in range(len(spectrum_arr)):
-    velocity = []
-    z_velocity = []
-    SN = []
-    delta = []
-    delta_inter = []
-    z_err_arr = []
-    # Now, make a variance between arrays -- add some noise
-    # from SN 1 to 100
+    for i in range(len(spectrum_arr)):
+        velocity = []
+        z_velocity = []
+        SN = []
+        delta = []
+        delta_inter = []
+        z_err_arr = []
+        # Now, make a variance between arrays -- add some noise
+        # from SN 1 to 100
+        for j in range(100, 110, 1):
+            print(f"SN is {j}")
+            ang = np.copy(spectrum_arr[i][0])
+            flux = np.copy(spectrum_arr[i][1])
+            _, ang = pyasl.dopplerShift(ang, flux, v / 1000, edgeHandling="firstlast")
+            noise_spectrum = np.copy(flux)
+            noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
+            noise_spectrum = noise_spectrum + noise
+            cv, z, z_err, s = find_velocity([ang, noise_spectrum], 
+                                            [a_template, f_template],
+                                            [4700, 5000], dots)
+            velocity.append(cv)
+            z_velocity.append(z)
+            SN.append(j)
+            delta_inter.append(v - z)  # For delta graph
+            delta.append(v - cv)
+            z_err_arr.append(s)
 
-    for j in range(1, 2, 1):
-       print(f"SN is {j}")
-       ang = np.copy(spectrum_arr[i][0])
-       flux = np.copy(spectrum_arr[i][1])
-#       print(round(getsizeof(flux) / 1024 / 1024,2))
+            del noise_spectrum
+            del ang
+            del flux
 
-       _, ang = pyasl.dopplerShift(ang, flux, v/1000, edgeHandling="firstlast")
-       noise_spectrum = np.copy(flux)
-       noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
-       noise_spectrum = noise_spectrum + noise
-       cv, z, z_err = find_velocity([ang, noise_spectrum], [a_template, f_template],
-                             [4500, 5000], dots)
-       velocity.append(cv)
-       z_velocity.append(z)
-       SN.append(j)
-       delta_inter.append(v - z)  # For delta graph
-       delta.append(v - cv)
-       z_err_arr.append(z_err * 10 * (1/j))
-
-       del noise_spectrum
-       del ang
-       del flux
- 
-
-    velocity_data = [velocity, z_velocity]
-    total_velocity_data.append(velocity_data)
-    total_delta_inter.append(delta_inter)
-    total_delta.append(delta)
-    
+        velocity_data = [velocity, z_velocity]
+        total_velocity_data.append(velocity_data)
+        total_delta_inter.append(delta_inter)
+        total_delta.append(delta)
+        total_velocity_err.append(z_err_arr)
+        
 
 # A very bad part. btw -- it's time to get it done
-from matplotlib.ticker import MultipleLocator
-import matplotlib.font_manager as fm
-gs_font = fm.FontProperties(
-                fname='/System/Library/Fonts/Supplemental/GillSans.ttc')
+    from matplotlib.ticker import MultipleLocator
+    import matplotlib.font_manager as fm
+    gs_font = fm.FontProperties(
+                    fname='/System/Library/Fonts/Supplemental/GillSans.ttc')
 
-plt.style.use('./old-style.mplstyle')
+    plt.style.use('./old-style.mplstyle')
 # plt.grid()
-WIDTH, HEIGHT, DPI = 700, 500, 100
-fig, ax = plt.subplots(figsize=(WIDTH/DPI, HEIGHT/DPI), dpi=DPI)
-linestyle = ['solid', "dashed", 'dotted', 'dashdot', 'solid', 'dashed','dotted', 'dashdot', 'solid', 'dashed']
+    WIDTH, HEIGHT, DPI = 700, 500, 100
+    fig, ax = plt.subplots(figsize=(WIDTH/DPI, HEIGHT/DPI), dpi=DPI)
+    linestyle = ['solid', "dashed", 'dotted', 'dashdot', 'solid', 'dashed','dotted', 'dashdot', 'solid', 'dashed']
 
-for i in range(len(spectrum_arr)):
-    ax.errorbar(SN, total_delta[i], z_err_arr[i], color="k", linestyle=linestyle[i], label=spectrum_names_direct[i])
+    for i in range(len(spectrum_arr)):
+        ax.errorbar(SN, total_delta[i], total_velocity_err[i], color="k", linestyle=linestyle[i], label=spectrum_names_direct[i])
 
-plt.title(f"Delta graph for {v} m/s")
-plt.xlabel("S/N", fontsize=14)
-plt.ylabel("Delta", fontsize=14)
-# plt.yscale("log")
-plt.legend()
-plt.show()
+    if plot:
+        plt.title(f"Delta graph for {v} m/s")
+        plt.xlabel("S/N", fontsize=14)
+        plt.ylabel("Delta", fontsize=14)
+        plt.legend()
+        plt.show()
+
+
+if __name__ == "__main__":
+    make_good()

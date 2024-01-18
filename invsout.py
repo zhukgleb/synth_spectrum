@@ -8,7 +8,7 @@ s2 = extract_data("data/NES_model_110000.rgs", text=True)
 s3 = extract_data("data/NES_model_60000.rgs", text=True)
 s4 = extract_data("data/NES_model_40000.rgs", text=True)
 s5 = extract_data("data/NES_model_15000.rgs", text=True)
-#     s6 = extract_data("data/NES_model_30000.rgs", text=True)
+s6 = extract_data("data/NES_model_30000.rgs", text=True)
 a_template, f_template = extract_data("data/NES_model_110000.rgs", text=True)
 
 spectrum_arr = [s2, s3, s4, s5]

@@ -5,12 +5,15 @@ from astropy.nddata import StdDevUncertainty
 from specutils import Spectrum1D
 from specutils.analysis import correlation
 from resolution import increese_resolution
+from scipy.optimize import curve_fit
+from memory_profiler import profile
+
 
 
 def gaussian_function(x, amplitude, mean, sigma, shift):
     return amplitude * np.exp(-(x - mean)**2 / (2 * sigma**2)) + shift
 
-
+@profile
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     plot = False
     spectrum_ang = spectrum[0]
@@ -37,24 +40,31 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
 
     speed_arr = []  # for speed calculate in multiply approach
 
-    template = Spectrum1D(spectral_axis=template_ang*u.AA, flux=template_flux*flux_unit, uncertainty=StdDevUncertainty(unc_t))
-    observed = Spectrum1D(spectral_axis=spectrum_ang*u.AA, flux=spectrum_flux*flux_unit, uncertainty=StdDevUncertainty(unc))
-    corr, lag = correlation.template_correlate(observed, template, lag_units=u.one, method="fft")
-    corr = (corr-np.min(corr))/(np.max(corr)-np.min(corr))  # normalize correlation
+    template = Spectrum1D(spectral_axis=template_ang*u.AA, 
+                          flux=template_flux*flux_unit,
+                          uncertainty=StdDevUncertainty(unc_t))
+    observed = Spectrum1D(spectral_axis=spectrum_ang*u.AA,
+                          flux=spectrum_flux*flux_unit,
+                          uncertainty=StdDevUncertainty(unc))
+    corr, lag = correlation.template_correlate(observed, template,
+                                               lag_units=u.one, method="fft")
+    corr = (corr - np.min(corr)) / (np.max(corr) - np.min(corr))  # normalize correlation
 
     # autocorrelation part. needs for error estimation
-    corr_template, lag_template = correlation.template_correlate(template, template, lag_units=u.one, method="fft")
-    corr_template = (corr_template-np.min(corr_template))/(np.max(corr_template)-np.min(corr_template)) 
-
-#    plt.plot(lag*299792458, corr)
-#    plt.xlabel("Correlation speed, m/s"
-#    plt.ylabel("Correlation Signal")
-#    plt.show()
+    corr_template, lag_template = correlation.template_correlate(template,
+                                                                 template,
+                                                                 lag_units=u.one,
+                                                                 method="fft")
+    corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
+    if plot:
+        plt.plot(lag*299792458, corr)
+        plt.xlabel("Correlation speed, m/s")
+        plt.ylabel("Correlation Signal")
+        plt.show()
 
     z_peak = lag[np.where(corr==np.max(corr))][0]
     calculate_velocity = z_peak * 299792458
     speed_arr.append(calculate_velocity)
-    print(f"calculate speed is {calculate_velocity}")
     n = 15 * 1000 # points to the left or right of correlation maximum
     index_peak = np.where(corr == np.amax(corr))[0][0]
     peak_lags = lag[index_peak-n:index_peak+n+1].value
@@ -63,14 +73,15 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     roots = np.roots(p)
     v_fit = np.mean(roots) # maximum lies at mid point between roots
     z = v_fit * 299792458 
-    print("Redshift from parabolic fit: ", z)
 
-#    plt.scatter(peak_lags * 299792458, peak_vals, label='data')
-#    plt.plot(peak_lags * 299792458, np.polyval(p, peak_lags), linewidth=0.5, label='fit')
-#    plt.xlabel(lag.unit)
-#    plt.legend()
-#    plt.title('Fit to correlation peak')
-#    plt.show()
+    if plot:
+        plt.scatter(peak_lags * 299792458, peak_vals, label='data')
+        plt.plot(peak_lags * 299792458, np.polyval(p, peak_lags),
+                 linewidth=0.5, label='fit')
+        plt.xlabel(lag.unit)
+        plt.legend()
+        plt.title('Fit to correlation peak')
+        plt.show()
 
     # Error count part
     sigma_t = np.std(template_flux)
@@ -78,21 +89,10 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     Rt = np.sqrt(np.mean(template_flux**2))
     Rg = np.sqrt(np.mean(spectrum_flux**2))
     sigma =  (1/len(template_flux)) * (sigma_t**2 / Rt**2 + sigma_g**2 / Rg**2) ** 0.5
-    print(f"sigma: {sigma}")
-    print(f"sigma in meters {sigma*299792458}")
-    print("--------------------------------")
     # A is cross-correlation peak intens
     # THIS PEACE OF SHIT
     # Calculate velocity error
     # Moiseev error counting
-    # warning! rewriting some vars
-#    autocorr_crop = np.where((lag_template*299792458 >= -15*1000) & (lag_template*299792458<= 15*1000))
-#    corr_template = corr_template[autocorr_crop]
-#    lag_template = lag_template[autocorr_crop]
-
-
-    from scipy.optimize import curve_fit
-
     # Optimization correlation peak with gauss function
     # For this, need to cut-off some lenght of arrray
     # TO DO: add cuts for multiply peaks fitting.
@@ -103,14 +103,14 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     lag_template = lag_template[autocorr_crop]
 
     initial_guess = [max(corr_template), 0, 1, 0.90] # Initial guess for template-template correlation
-#    fit_params, covariance = curve_fit(gaussian_function, lag_template*299792458, corr_template, p0=initial_guess, bounds=([0, -np.inf, 0], [np.inf, np.inf, np.inf]))
-#     fit_params, covariance = curve_fit(gaussian_function, peak_lags*299792458, peak_vals, p0=initial_guess, bounds=([0, -np.inf, 0], [np.inf, np.inf, np.inf]))
-    fit_params, covariance = curve_fit(gaussian_function, lag_template*299792458, corr_template, p0=initial_guess)
+    fit_params, covariance = curve_fit(gaussian_function, 
+                                       lag_template*299792458, corr_template,
+                                       p0=initial_guess)
 
     fit_sigma_t = fit_params[2]
-    print(fit_sigma_t)
     if plot:
-        plt.plot(lag_template*299792458, gaussian_function(lag_template*299792458, *fit_params), 'r-', label='fit')
+        plt.plot(lag_template*299792458, gaussian_function(lag_template*299792458,
+                                                           *fit_params), 'r-', label='fit')
         plt.plot(lag_template*299792458, corr_template)
         plt.xlabel("Correlation speed, m/s")
         plt.ylabel("Correlation Signal")
@@ -123,9 +123,10 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     lag = lag[corr_crop]
 
     initial_guess = [max(corr), z, 3000, 0.96]
-    fit_params, covariance = curve_fit(gaussian_function, peak_lags*299792458, peak_vals, p0=initial_guess)
+    fit_params, covariance = curve_fit(gaussian_function, 
+                                       peak_lags*299792458, peak_vals,
+                                       p0=initial_guess)
     fit_sigma = fit_params[2]
-    print(fit_sigma)
     if plot:
         plt.plot(lag*299792458, gaussian_function(lag*299792458, *fit_params), 'r-', label='fit')
         plt.plot(lag*299792458, corr)
@@ -133,8 +134,8 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
         plt.ylabel("Correlation Signal")
         plt.show()
     z_err = abs(sigma**2 - sigma_t**2)
-    print(z_err**0.5 * z)
     z_err = z_err**0.5 
     
+    print(f"Direct calculated velocity is: {calculate_velocity} m/s, sigma gauss: {z_err} m/s, sigma: {sigma*299792458} m/s")
 
-    return calculate_velocity, z, z_err
+    return calculate_velocity, z, z_err, sigma*299792458

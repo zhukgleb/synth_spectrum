@@ -72,27 +72,3 @@ def test_data_template(file_name: str = "Test_spectrum.syn", start: int=4500,
     flux = flux[index_start_1:index_end_1]
 
     return ang, flux
-
-"""
-def make_shifted_data(velocity: float):
-    ang_1_original, flux_1_original = test_data()
-    ang_2_original, flux_2_original = test_data_ideal()
-
-    ds = doppler_shift(velocity)
-    ang_resolution = ang_1_original[1] - ang_1_original[0]
-    print(f"doppler shift as {ds}, lambda res is {ang_resolution}")
-    interp_multi = round(ang_resolution / ds)
-    dots = int(len(ang_2_original)*interp_multi) * 10
-    ang_1 = np.linspace(np.min(ang_1_original), np.max(ang_1_original), dots)
-    ang_2 = np.linspace(np.min(ang_2_original), np.max(ang_2_original), dots)
-    f1 = interp1d(ang_1_original, flux_1_original, kind="quadratic")
-    f2 = interp1d(ang_2_original, flux_2_original, kind="quadratic")
-    flux_1 = f1(ang_1)
-    flux_2 = f2(ang_2)
-
-    ang_resolution = ang_1[1] - ang_1[0]
-    shift_index = calculate_shift_index(ang_resolution, velocity)
-    flux_2 = flux_2[shift_index:]
-    
-    return ang_1, flux_1, ang_2, flux_2
-"""
