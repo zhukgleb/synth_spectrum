@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from memory_profiler import profile
 
 
-@profile
 def make_good():
 # s2 = extract_data("data/NES_model_110000.rgs", text=True)
     s3 = extract_data("data/NES_model_60000.rgs", text=True)
@@ -28,7 +27,7 @@ def make_good():
     total_velocity_err = []
 
     v = 20 # in meters
-    dots = 200
+    dots = 1000
     plot = False
 
     for i in range(len(spectrum_arr)):
@@ -40,7 +39,7 @@ def make_good():
         z_err_arr = []
         # Now, make a variance between arrays -- add some noise
         # from SN 1 to 100
-        for j in range(100, 110, 1):
+        for j in range(100, 101, 1):
             print(f"SN is {j}")
             ang = np.copy(spectrum_arr[i][0])
             flux = np.copy(spectrum_arr[i][1])
@@ -50,7 +49,7 @@ def make_good():
             noise_spectrum = noise_spectrum + noise
             cv, z, z_err, s = find_velocity([ang, noise_spectrum], 
                                             [a_template, f_template],
-                                            [4700, 5000], dots)
+                                            [4700, 4800], dots)
             velocity.append(cv)
             z_velocity.append(z)
             SN.append(j)
