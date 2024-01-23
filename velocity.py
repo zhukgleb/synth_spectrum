@@ -21,7 +21,10 @@ from fit import gauss_corr_fit
 # and cut then multiply dots
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
-    plot = False
+    do_fit = False
+    plot = True
+    # lag_unit = u.one
+    lag_unit = (u.meter / u.second)
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
     template_ang = template[0]
@@ -35,14 +38,14 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     obs_crop = np.where((spectrum_ang >= aa_start) & (spectrum_ang <= aa_end))
     template_crop = np.where((template_ang >= aa_start) & (template_ang <= aa_end))
 
-    spectrum_ang = spectrum_ang[obs_crop]
-    spectrum_flux = spectrum_flux[obs_crop]
+    spectrum_ang = spectrum_ang[obs_crop] 
+    spectrum_flux = spectrum_flux[obs_crop] 
     template_ang = template_ang[template_crop]
     template_flux = template_flux[template_crop]
 
     flux_unit = u.Unit('erg s^-1 cm^-2 AA^-1')
-    unc = [10e-10 for x in range(len(spectrum_flux))]
-    unc_t = [10e-10 for x in range(len(template_flux))]
+    unc = np.array([10e-10 for x in range(len(spectrum_flux))]) * flux_unit
+    unc_t = np.array([10e-10 for x in range(len(template_flux))]) * flux_unit
 
     speed_arr = []  # for speed calculate in multiply approach
 
@@ -53,27 +56,36 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                           flux=spectrum_flux*flux_unit,
                           uncertainty=StdDevUncertainty(unc))
     corr, lag = correlation.template_correlate(observed, template,
-                                               lag_units=u.one, method="fft")
+                                               lag_units=lag_unit,
+                                               apodization_window=.2,
+                                               method="fft")
     corr = (corr - np.min(corr)) / (np.max(corr) - np.min(corr))  # normalize correlation
-
+   
     if plot:
-        plt.plot(lag*299792458, corr)
-        plt.xlabel("Correlation speed, m/s")
+        plt.plot(lag, corr, linewidth=0.5)
+        plt.xlabel(lag.unit)
         plt.ylabel("Correlation Signal")
         plt.show()
 
     z_peak = lag[np.where(corr==np.max(corr))][0]
-    calculate_velocity = z_peak * 299792458
+
+    if lag_unit == u.one:  # if quant of lags is u.one! re-write later
+        calculate_velocity = z_peak * 299792458
+    else:
+        calculate_velocity = z_peak
     speed_arr.append(calculate_velocity)
+    lag = lag * lag_unit
+    sigma_o_g = 0
 
-    sigma_o_g = gauss_corr_fit([lag, corr], calculate_velocity, 3000, 0.965)
-
+    if do_fit:
+        sigma_o_g = gauss_corr_fit([lag, corr], calculate_velocity, 3000, 0.965)
     del corr
     del lag
 
     corr_template, lag_template = correlation.template_correlate(template,
                                                                  template,
-                                                                 lag_units=u.one,
+                                                                 lag_units=lag_unit,
+                                                                 apodization_window=.2,
                                                                  method="fft")
     corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
  
@@ -85,7 +97,16 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
 #    roots = np.roots(p)
 #    v_fit = np.mean(roots) # maximum lies at mid point between roots
 #    z = v_fit * 299792458 
-    sigma_t_g = gauss_corr_fit([lag_template, corr_template], 0, 1, 0.91)
+    if plot:
+        plt.plot(lag_template, corr_template)
+        plt.xlabel(lag_template.unit)
+        plt.ylabel("Correlation Signal")
+        plt.show()
+
+
+    sigma_t_g = 0
+    if do_fit:
+        sigma_t_g = gauss_corr_fit([lag_template, corr_template], 0, 1, 0.91)
     del lag_template
     del corr_template
 
@@ -132,6 +153,8 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     z_err = sigma_o_g**2 - sigma_t_g**2
     z_err = z_err**0.5 
     
+#     print(f"Direct calculated velocity is: {calculate_velocity} m/s, sigma gauss: {z_err} m/s, sigma: {sigma*299792458} m/s")
     print(f"Direct calculated velocity is: {calculate_velocity} m/s, sigma gauss: {z_err} m/s, sigma: {sigma*299792458} m/s")
+
 
     return calculate_velocity, z_peak, z_err, sigma*299792458

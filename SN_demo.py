@@ -4,6 +4,7 @@ import PyAstronomy.pyasl as pyasl
 import numpy as np
 import matplotlib.pyplot as plt
 from memory_profiler import profile
+import astropy.units as u
 
 
 def make_good():
@@ -26,8 +27,8 @@ def make_good():
     total_delta_inter = []
     total_velocity_err = []
 
-    v = 20 # in meters
-    dots = 1000
+    v = 20# in meters
+    dots = 100
     plot = False
 
     for i in range(len(spectrum_arr)):
@@ -49,7 +50,7 @@ def make_good():
             noise_spectrum = noise_spectrum + noise
             cv, z, z_err, s = find_velocity([ang, noise_spectrum], 
                                             [a_template, f_template],
-                                            [4700, 4800], dots)
+                                            [5000, 6000], dots)
             velocity.append(cv)
             z_velocity.append(z)
             SN.append(j)
