@@ -6,9 +6,12 @@ from specutils import Spectrum1D
 from specutils.analysis import correlation
 from resolution import increese_resolution
 from memory_profiler import profile
-from fit import gauss_corr_fit
+from fit import gauss_corr_fit, parabola
 
 
+
+def gaussian(x, amplitude, mean, stddev):
+    return amplitude * np.exp(-(x - mean)**2 / (2 * stddev**2))
 
 # @profile
 
@@ -22,9 +25,9 @@ from fit import gauss_corr_fit
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     do_fit = False
-    plot = True
-    # lag_unit = u.one
-    lag_unit = (u.meter / u.second)
+    plot = False
+    lag_unit = u.one
+#     lag_unit = (u.meter / u.second)
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
     template_ang = template[0]
@@ -57,9 +60,13 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                           uncertainty=StdDevUncertainty(unc))
     corr, lag = correlation.template_correlate(observed, template,
                                                lag_units=lag_unit,
-                                               apodization_window=.2,
+                                               apodization_window=0.5,
                                                method="fft")
-    corr = (corr - np.min(corr)) / (np.max(corr) - np.min(corr))  # normalize correlation
+#     corr = (corr - np.min(corr)) / (np.max(corr) - np.min(corr))  # normalize correlation
+    sigma1 = np.sqrt(1/len(spectrum_ang) * np.sum(spectrum_flux**2))
+    sigma2 = np.sqrt(1/len(template_ang) * np.sum(template_flux**2))
+
+    corr = 1 / (len(spectrum_ang)) * (1/(sigma1 * sigma2)) * corr
    
     if plot:
         plt.plot(lag, corr, linewidth=0.5)
@@ -85,9 +92,9 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     corr_template, lag_template = correlation.template_correlate(template,
                                                                  template,
                                                                  lag_units=lag_unit,
-                                                                 apodization_window=.2,
+                                                                 apodization_window=0.5,
                                                                  method="fft")
-    corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
+#    corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
  
 #    n = 15 * 1000 # points to the left or right of correlation maximum
 #    index_peak = np.where(corr == np.amax(corr))[0][0]
@@ -97,6 +104,7 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
 #    roots = np.roots(p)
 #    v_fit = np.mean(roots) # maximum lies at mid point between roots
 #    z = v_fit * 299792458 
+    corr_template = 1 / (len(template_ang)) * (1/(sigma1 * sigma2)) * corr_template
     if plot:
         plt.plot(lag_template, corr_template)
         plt.xlabel(lag_template.unit)

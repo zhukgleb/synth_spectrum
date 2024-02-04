@@ -6,6 +6,9 @@ from numpy import where
 def gaussian_function(x, amplitude, mean, sigma, shift):
     return amplitude * n_exp(-(x - mean)**2 / (2 * sigma**2)) + shift
 
+def parabola(x, a, b, c):
+    return a * x**2 + b * x + c
+
 
 def gauss_corr_fit(corr_arr: list, z: float, sigma: float, shift: float):
     plot = False
