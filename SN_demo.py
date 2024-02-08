@@ -7,35 +7,32 @@ from memory_profiler import profile
 import astropy.units as u
 
 
-font = {'family' : 'normal',
-        'weight' : 'normal',
-        'size'   : 22} 
-import matplotlib
-matplotlib.rc('font', **font)
+#font = {'family' : 'normal',
+#        'weight' : 'normal',
+#        'size'   : 22} 
+#import matplotlib
+#matplotlib.rc('font', **font)
 
 def make_good():
-    s3 = extract_data("data/NES_model_60000.rgs", text=True)
-    s4 = extract_data("data/NES_model_40000.rgs", text=True)
-    s5 = extract_data("data/NES_model_15000.rgs", text=True)
+    cool = extract_data("data/NES_model_110000.rgs", text=True)
+    lbv = extract_data("data/MODEL1_NOSHIFT.data", text=True)
     a_template, f_template = extract_data("data/NES_model_110000.rgs", text=True)
 
-# spectrum_arr = [s3, s3, s3, s3, s3, s3, s3, s3, s3, s3]
-# spectrum_arr = [s5, s5, s5, s5, s5, s5, s5, s5, s5, s5]
-    spectrum_arr = [s3, s4, s5]
+#     a_template, f_template = extract_data("data/MODEL1_NOSHIFT.data", text=True)
 
-# spectrum_arr = [[a_template, f_template]]
+    spectrum_arr = [cool]
+
     spectrum_names = ["R=60000 inter", "R=15000 inter"]
     spectrum_names_direct = ["R=60000", "R=40000", "R=15000"]
-# spectrum_names_direct = ["R=15000", "R=15000", "R=15000", "R=15000", "R=15000","R=15000","R=15000","R=15000","R=15000","R=15000"]
 
     total_velocity_data = []
     total_delta = []
     total_delta_inter = []
     total_velocity_err = []
 
-    v = 20 # in meters
-    dots = 100
-    plot = True
+    v = 20 * 1000 # in meters
+    dots = 1
+    plot = False
 
     for i in range(len(spectrum_arr)):
         velocity = []
@@ -52,11 +49,12 @@ def make_good():
             flux = np.copy(spectrum_arr[i][1])
             _, ang = pyasl.dopplerShift(ang, flux, v / 1000, edgeHandling="firstlast")
             noise_spectrum = np.copy(flux)
-            noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
+            # noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
+            noise = 0
             noise_spectrum = noise_spectrum + noise
             cv, z, z_err, s = find_velocity([ang, noise_spectrum], 
                                             [a_template, f_template],
-                                            [5000, 5100], dots)
+                                            [5000, 6000], dots)
             velocity.append(cv)
             z_velocity.append(z)
             SN.append(j)

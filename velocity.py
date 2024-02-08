@@ -25,7 +25,8 @@ def gaussian(x, amplitude, mean, stddev):
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     do_fit = False
-    plot = False
+    plot = True
+    raw = True
     lag_unit = u.one
 #     lag_unit = (u.meter / u.second)
     spectrum_ang = spectrum[0]
@@ -46,34 +47,65 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     template_ang = template_ang[template_crop]
     template_flux = template_flux[template_crop]
 
+
+    if plot:
+        plt.plot(spectrum_ang, spectrum_flux, linewidth=1, label='obs')
+        plt.plot(template_ang, template_flux, linewidth=0.5, color='r', label='template')
+        plt.show()
+
+
+    
     flux_unit = u.Unit('erg s^-1 cm^-2 AA^-1')
-    unc = np.array([10e-10 for x in range(len(spectrum_flux))]) * flux_unit
-    unc_t = np.array([10e-10 for x in range(len(template_flux))]) * flux_unit
+    unc = np.array([10e-20 for x in range(len(spectrum_flux))]) * flux_unit
+    unc_t = np.array([1 for x in range(len(template_flux))]) * flux_unit
+#    unc = np.random.normal(loc=0, scale=1/300, size=len(spectrum_flux)) * flux_unit
 
     speed_arr = []  # for speed calculate in multiply approach
 
     template = Spectrum1D(spectral_axis=template_ang*u.AA, 
-                          flux=template_flux*flux_unit,
-                          uncertainty=StdDevUncertainty(unc_t))
+                          flux=template_flux*flux_unit)
     observed = Spectrum1D(spectral_axis=spectrum_ang*u.AA,
                           flux=spectrum_flux*flux_unit,
                           uncertainty=StdDevUncertainty(unc))
-    corr, lag = correlation.template_correlate(observed, template,
-                                               lag_units=lag_unit,
-                                               apodization_window=0.5,
-                                               method="fft")
-#     corr = (corr - np.min(corr)) / (np.max(corr) - np.min(corr))  # normalize correlation
-    sigma1 = np.sqrt(1/len(spectrum_ang) * np.sum(spectrum_flux**2))
-    sigma2 = np.sqrt(1/len(template_ang) * np.sum(template_flux**2))
+    
 
-    corr = 1 / (len(spectrum_ang)) * (1/(sigma1 * sigma2)) * corr
-   
+    if raw:
+        from specutils.fitting import continuum
+        from astropy.modeling.polynomial import Chebyshev1D
+        continuum_model = continuum.fit_generic_continuum(observed) 
+        p_obs = observed - continuum_model(observed.wavelength)
+        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(5)) 
+        p_template = template - continuum_model(template.wavelength)
+    else:
+        p_obs = observed
+        p_template = template
+
+    from specutils.manipulation import gaussian_smooth, convolution_smooth
+    fc = 0.25  # Cutoff frequency as a fraction of the sampling rate (in (0, 0.5)).
+    b = 0.49   # Transition band, as a fraction of the sampling rate (in (0, 0.5)).
+
+    N = int(np.ceil((4 / b)))
+    if not N % 2:  # N must be odd
+        N += 1
+    n = np.arange(N)
+     
+    filt = np.sinc(2 * fc * (n - (N - 1) / 2))
+    w = 0.42 - 0.5 * np.cos(2 * np.pi * n / (N - 1)) + \
+        0.08 * np.cos(4 * np.pi * n / (N - 1))
+    filt *= w
+    filt /= np.sum(filt)
+    p_obs_smoothed = convolution_smooth(observed, filt)
+
     if plot:
-        plt.plot(lag, corr, linewidth=0.5)
-        plt.xlabel(lag.unit)
-        plt.ylabel("Correlation Signal")
+        plt.plot(p_obs.wavelength, p_obs.flux, linewidth=1, label='obs')
+        plt.plot(p_template.wavelength, p_template.flux, linewidth=0.5, color='r', label='template')
         plt.show()
 
+
+    corr, lag = correlation.template_correlate(p_obs_smoothed, p_template, lag_units=lag_unit, method="fft")
+    corr_template = (corr - np.min(corr)) / (np.max(corr) - np.min(corr)) 
+    sigma1 = np.sqrt(1/len(spectrum_ang) * np.sum(spectrum_flux**2))
+    sigma2 = np.sqrt(1/len(template_ang) * np.sum(template_flux**2))
     z_peak = lag[np.where(corr==np.max(corr))][0]
 
     if lag_unit == u.one:  # if quant of lags is u.one! re-write later
@@ -81,7 +113,14 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     else:
         calculate_velocity = z_peak
     speed_arr.append(calculate_velocity)
-    lag = lag * lag_unit
+ 
+   
+    if plot:
+        plt.plot(lag * 299792458, corr, linewidth=1)
+        plt.xlim((-10*1000*1000, 10*1000*1000))
+        plt.ylabel("Correlation Signal")
+        plt.show()
+   
     sigma_o_g = 0
 
     if do_fit:
@@ -89,12 +128,11 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     del corr
     del lag
 
-    corr_template, lag_template = correlation.template_correlate(template,
-                                                                 template,
+    corr_template, lag_template = correlation.template_correlate(p_template,
+                                                                 p_template,
                                                                  lag_units=lag_unit,
-                                                                 apodization_window=0.5,
                                                                  method="fft")
-#    corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
+    corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
  
 #    n = 15 * 1000 # points to the left or right of correlation maximum
 #    index_peak = np.where(corr == np.amax(corr))[0][0]
@@ -104,13 +142,12 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
 #    roots = np.roots(p)
 #    v_fit = np.mean(roots) # maximum lies at mid point between roots
 #    z = v_fit * 299792458 
-    corr_template = 1 / (len(template_ang)) * (1/(sigma1 * sigma2)) * corr_template
+#    corr_template = 1 / (len(template_ang)) * (1/(sigma1 * sigma2)) * corr_template
     if plot:
         plt.plot(lag_template, corr_template)
         plt.xlabel(lag_template.unit)
         plt.ylabel("Correlation Signal")
         plt.show()
-
 
     sigma_t_g = 0
     if do_fit:
