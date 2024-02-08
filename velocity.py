@@ -5,8 +5,11 @@ from astropy.nddata import StdDevUncertainty
 from specutils import Spectrum1D
 from specutils.analysis import correlation
 from resolution import increese_resolution
-from memory_profiler import profile
-from fit import gauss_corr_fit, parabola
+from fit import gauss_corr_fit
+from specutils.fitting import continuum
+from astropy.modeling.polynomial import Chebyshev1D
+from specutils.manipulation import gaussian_smooth, convolution_smooth
+
 
 
 
@@ -28,7 +31,6 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     plot = True
     raw = True
     lag_unit = u.one
-#     lag_unit = (u.meter / u.second)
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
     template_ang = template[0]
@@ -57,8 +59,6 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     
     flux_unit = u.Unit('erg s^-1 cm^-2 AA^-1')
     unc = np.array([10e-20 for x in range(len(spectrum_flux))]) * flux_unit
-    unc_t = np.array([1 for x in range(len(template_flux))]) * flux_unit
-#    unc = np.random.normal(loc=0, scale=1/300, size=len(spectrum_flux)) * flux_unit
 
     speed_arr = []  # for speed calculate in multiply approach
 
@@ -68,19 +68,18 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                           flux=spectrum_flux*flux_unit,
                           uncertainty=StdDevUncertainty(unc))
     
-
     if raw:
-        from specutils.fitting import continuum
-        from astropy.modeling.polynomial import Chebyshev1D
-        continuum_model = continuum.fit_generic_continuum(observed) 
+        continuum_model = continuum.fit_generic_continuum(observed, model=Chebyshev1D(15))
         p_obs = observed - continuum_model(observed.wavelength)
-        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(5)) 
+        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(15)) 
         p_template = template - continuum_model(template.wavelength)
     else:
         p_obs = observed
         p_template = template
 
-    from specutils.manipulation import gaussian_smooth, convolution_smooth
+    
+    # Needs to gentlee setting
+
     fc = 0.25  # Cutoff frequency as a fraction of the sampling rate (in (0, 0.5)).
     b = 0.49   # Transition band, as a fraction of the sampling rate (in (0, 0.5)).
 
@@ -102,14 +101,18 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
         plt.show()
 
 
-    corr, lag = correlation.template_correlate(p_obs_smoothed, p_template, lag_units=lag_unit, method="fft")
-    corr_template = (corr - np.min(corr)) / (np.max(corr) - np.min(corr)) 
+
+    # Correlation part
+
     sigma1 = np.sqrt(1/len(spectrum_ang) * np.sum(spectrum_flux**2))
     sigma2 = np.sqrt(1/len(template_ang) * np.sum(template_flux**2))
+    corr, lag = correlation.template_correlate(p_obs_smoothed, p_template, lag_units=lag_unit, method="fft")
+    corr = corr / (sigma1 * sigma2 * len(corr))
+
     z_peak = lag[np.where(corr==np.max(corr))][0]
 
     if lag_unit == u.one:  # if quant of lags is u.one! re-write later
-        calculate_velocity = z_peak * 299792458
+        calculate_velocity = z_peak * 299792458 # in meters/second
     else:
         calculate_velocity = z_peak
     speed_arr.append(calculate_velocity)
@@ -132,19 +135,10 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                                                                  p_template,
                                                                  lag_units=lag_unit,
                                                                  method="fft")
-    corr_template = (corr_template - np.min(corr_template)) / (np.max(corr_template) - np.min(corr_template)) 
- 
-#    n = 15 * 1000 # points to the left or right of correlation maximum
-#    index_peak = np.where(corr == np.amax(corr))[0][0]
-#    peak_lags = lag[index_peak-n:index_peak+n+1].value
-#    peak_vals = corr[index_peak-n:index_peak+n+1].value
-#    p = np.polyfit(peak_lags, peak_vals, deg=2)
-#    roots = np.roots(p)
-#    v_fit = np.mean(roots) # maximum lies at mid point between roots
-#    z = v_fit * 299792458 
-#    corr_template = 1 / (len(template_ang)) * (1/(sigma1 * sigma2)) * corr_template
+    corr_template = corr_template / (sigma1 * sigma2 * len(corr_template))
+
     if plot:
-        plt.plot(lag_template, corr_template)
+        plt.plot(lag_template * 299792458, corr_template)
         plt.xlabel(lag_template.unit)
         plt.ylabel("Correlation Signal")
         plt.show()
@@ -198,7 +192,6 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     z_err = sigma_o_g**2 - sigma_t_g**2
     z_err = z_err**0.5 
     
-#     print(f"Direct calculated velocity is: {calculate_velocity} m/s, sigma gauss: {z_err} m/s, sigma: {sigma*299792458} m/s")
     print(f"Direct calculated velocity is: {calculate_velocity} m/s, sigma gauss: {z_err} m/s, sigma: {sigma*299792458} m/s")
 
 

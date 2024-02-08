@@ -30,8 +30,8 @@ def make_good():
     total_delta_inter = []
     total_velocity_err = []
 
-    v = 20 * 1000 # in meters
-    dots = 1
+    v = 20 # in meters
+    dots = 50
     plot = False
 
     for i in range(len(spectrum_arr)):
@@ -54,7 +54,7 @@ def make_good():
             noise_spectrum = noise_spectrum + noise
             cv, z, z_err, s = find_velocity([ang, noise_spectrum], 
                                             [a_template, f_template],
-                                            [5000, 6000], dots)
+                                            [4800, 7700], dots)
             velocity.append(cv)
             z_velocity.append(z)
             SN.append(j)
