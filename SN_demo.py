@@ -30,8 +30,8 @@ def make_good():
     total_delta_inter = []
     total_velocity_err = []
 
-    v = 20 # in meters
-    dots = 50
+    v = 20 * 10 # in meters
+    dots = 10
     plot = False
 
     for i in range(len(spectrum_arr)):
@@ -43,18 +43,18 @@ def make_good():
         z_err_arr = []
         # Now, make a variance between arrays -- add some noise
         # from SN 1 to 100
-        for j in range(300, 301, 1):
+        for j in range(100, 101, 1):
             print(f"SN is {j}")
             ang = np.copy(spectrum_arr[i][0])
             flux = np.copy(spectrum_arr[i][1])
             _, ang = pyasl.dopplerShift(ang, flux, v / 1000, edgeHandling="firstlast")
             noise_spectrum = np.copy(flux)
-            # noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
-            noise = 0
+            noise = np.random.normal(loc=0, scale=1/j, size=len(flux))
+            # noise = 0
             noise_spectrum = noise_spectrum + noise
             cv, z, z_err, s = find_velocity([ang, noise_spectrum], 
                                             [a_template, f_template],
-                                            [4800, 7700], dots)
+                                            [5200, 7700], dots)
             velocity.append(cv)
             z_velocity.append(z)
             SN.append(j)

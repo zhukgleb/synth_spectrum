@@ -28,8 +28,9 @@ def gaussian(x, amplitude, mean, stddev):
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     do_fit = False
-    plot = True
+    plot = False
     raw = True
+    save = True
     lag_unit = u.one
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
@@ -55,6 +56,9 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
         plt.plot(template_ang, template_flux, linewidth=0.5, color='r', label='template')
         plt.show()
 
+    if save:
+        np.savetxt("results/spectrum.txt", np.column_stack((spectrum_ang, spectrum_flux)))
+        np.savetxt("results/template.txt", np.column_stack((template_ang, template_flux)))
 
     
     flux_unit = u.Unit('erg s^-1 cm^-2 AA^-1')
@@ -69,9 +73,9 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                           uncertainty=StdDevUncertainty(unc))
     
     if raw:
-        continuum_model = continuum.fit_generic_continuum(observed, model=Chebyshev1D(15))
+        continuum_model = continuum.fit_generic_continuum(observed, model=Chebyshev1D(3))
         p_obs = observed - continuum_model(observed.wavelength)
-        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(15)) 
+        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(3)) 
         p_template = template - continuum_model(template.wavelength)
     else:
         p_obs = observed
@@ -108,18 +112,20 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     sigma2 = np.sqrt(1/len(template_ang) * np.sum(template_flux**2))
     corr, lag = correlation.template_correlate(p_obs_smoothed, p_template, lag_units=lag_unit, method="fft")
     corr = corr / (sigma1 * sigma2 * len(corr))
-
+    corr = corr.value
+    lag = np.array(lag.value * 299792458)
+ 
     z_peak = lag[np.where(corr==np.max(corr))][0]
 
     if lag_unit == u.one:  # if quant of lags is u.one! re-write later
-        calculate_velocity = z_peak * 299792458 # in meters/second
+        calculate_velocity = z_peak
     else:
         calculate_velocity = z_peak
     speed_arr.append(calculate_velocity)
  
    
     if plot:
-        plt.plot(lag * 299792458, corr, linewidth=1)
+        plt.plot(lag, corr, linewidth=1)
         plt.xlim((-10*1000*1000, 10*1000*1000))
         plt.ylabel("Correlation Signal")
         plt.show()
@@ -127,7 +133,12 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     sigma_o_g = 0
 
     if do_fit:
-        sigma_o_g = gauss_corr_fit([lag, corr], calculate_velocity, 3000, 0.965)
+        sigma_o_g = gauss_corr_fit([lag, corr], calculate_velocity, 0, 0)
+
+
+    if save:
+        np.savetxt("results/correlation.txt", np.column_stack((lag, corr)))
+  
     del corr
     del lag
 
@@ -135,7 +146,10 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                                                                  p_template,
                                                                  lag_units=lag_unit,
                                                                  method="fft")
+    lag_template = lag_template.value * 299792458
+
     corr_template = corr_template / (sigma1 * sigma2 * len(corr_template))
+    corr_template = corr_template.value
 
     if plot:
         plt.plot(lag_template * 299792458, corr_template)
@@ -144,6 +158,9 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
         plt.show()
 
     sigma_t_g = 0
+    if save:
+        np.savetxt("results/autocorrelation.txt", np.column_stack((lag_template, corr_template)))
+ 
     if do_fit:
         sigma_t_g = gauss_corr_fit([lag_template, corr_template], 0, 1, 0.91)
     del lag_template
