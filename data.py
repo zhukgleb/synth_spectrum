@@ -12,9 +12,10 @@ def extract_data(path: str, text=False):
     if text:
         return [ang, red_flux]
     cont = data[:, 3]
+    flux = data[:, 2]
     ang.astype(float)
     red_flux.astype(float)
-    return [ang, red_flux, cont]
+    return [ang, red_flux, flux]
 
 
 # Return a close array-value to value 

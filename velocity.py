@@ -73,9 +73,9 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
                           uncertainty=StdDevUncertainty(unc))
     
     if raw:
-        continuum_model = continuum.fit_generic_continuum(observed, model=Chebyshev1D(3))
+        continuum_model = continuum.fit_generic_continuum(observed, model=Chebyshev1D(15))
         p_obs = observed - continuum_model(observed.wavelength)
-        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(3)) 
+        continuum_model = continuum.fit_generic_continuum(template, model=Chebyshev1D(15)) 
         p_template = template - continuum_model(template.wavelength)
     else:
         p_obs = observed
