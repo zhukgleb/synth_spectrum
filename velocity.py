@@ -28,9 +28,9 @@ def gaussian(x, amplitude, mean, stddev):
 
 def find_velocity(spectrum: list, template: list, inter: list, mult: int):
     do_fit = False
-    plot = False
+    plot = True
     raw = True
-    save = True
+    save = False
     lag_unit = u.one
     spectrum_ang = spectrum[0]
     spectrum_flux = spectrum[1]
@@ -153,7 +153,6 @@ def find_velocity(spectrum: list, template: list, inter: list, mult: int):
 
     if plot:
         plt.plot(lag_template * 299792458, corr_template)
-        plt.xlabel(lag_template.unit)
         plt.ylabel("Correlation Signal")
         plt.show()
 

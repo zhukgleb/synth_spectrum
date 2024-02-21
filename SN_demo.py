@@ -43,7 +43,7 @@ def make_good():
         z_err_arr = []
         # Now, make a variance between arrays -- add some noise
         # from SN 1 to 100
-        for j in range(1, 2, 1):
+        for j in range(100, 101, 1):
             print(f"SN is {j}")
             ang = np.copy(spectrum_arr[i][0])
             flux = np.copy(spectrum_arr[i][1])
