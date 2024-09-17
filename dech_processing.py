@@ -3,7 +3,7 @@ A small module of various functions for working with dech20/95 output files
 """
 
 from numpy import genfromtxt, concatenate, column_stack, savetxt, ndarray
-
+from astropy.io import fits
 
 """
 There in Dech is an option to choose to save all orders at once into one file,
@@ -31,6 +31,17 @@ def tab_spectra(filepath: str, save=False) -> ndarray:
         return output
 
 
+"""
+load a dech-specif. fits file
+"""
+def dech_fits_loader(path2data: str):
+    hdu_list = fits.open(path2data)
+    print(hdu_list.info())
+    image_data = [hdu_list[x].data for x in range(len(hdu_list))]
+    return image_data[0]
+
+
 if __name__ == "__main__":
-    data = tab_spectra("dech30.tab")
-    print(data)
+    # data = tab_spectra("dech30.tab")
+    # print(data)
+    # data = dech_fits_loader("data/fits/e718009s.fits")
