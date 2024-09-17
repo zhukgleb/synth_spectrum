@@ -57,10 +57,6 @@ def make_good():
     plt.plot(final_spec.spectral_axis, final_spec.flux)
     plt.show()
 
-
-
-
-
 #    from specutils.manipulation import FluxConservingResampler, LinearInterpolatedResampler, SplineInterpolatedResampler
 #    spline = SplineInterpolatedResampler()
 #    new_disp_grid = np.arange(min(spec_arr[:, 0]), max(spec_arr[:, 1]), 1) * u.AA
