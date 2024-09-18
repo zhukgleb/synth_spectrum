@@ -54,9 +54,9 @@ def fds_loader(path2data: str):
 
     expected_size = total_values * block_size
     if len(file_data) < expected_size:
-        raise ValueError("Размер файла меньше ожидаемого для данной структуры, поправьте кол-во порядков/формат записи")
+        raise ValueError("Expetred size is larger, than expected")
 
-    format_string = '<' + 'i' * total_values  # '<' для little-endian, 'i' для 32-битного целого числа
+    format_string = '<' + 'i' * total_values 
     unpacked_data = struct.unpack(format_string, file_data[:expected_size])
 
     orders = [unpacked_data[i:i + values_per_block] for i in range(0, total_values, values_per_block)]
