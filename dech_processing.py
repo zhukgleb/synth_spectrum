@@ -42,13 +42,19 @@ def dech_fits_loader(path2data: str):
     image_data = [hdu_list[x].data for x in range(len(hdu_list))]
     return image_data[0]
 
-def fds_loader(path2data: str):
-    orders_num = 40
-    values_per_block = 2048
+
+""""
+Сonverts from a hex file fds to a decimal one.
+Of the useful and necessary -- this is the number of orders,
+which affects the final extraction. It is also important
+to control the binning, for example,
+for 2 by 2 the block size will already be 1024,
+and the number of orders will drop by half
+"""
+def fds_loader(path2data: str, orders_num=40, values_per_block=2028):
     block_size = 4
     total_values = orders_num * values_per_block
 
-    # Чтение файла и извлечение данных
     with open(path2data, 'rb') as file:
         file_data = file.read()
 
@@ -60,15 +66,16 @@ def fds_loader(path2data: str):
     unpacked_data = struct.unpack(format_string, file_data[:expected_size])
 
     orders = [unpacked_data[i:i + values_per_block] for i in range(0, total_values, values_per_block)]
+    for i in range(len(orders)):  # Yep, i don't know how this make in list generator correctrly....
+        orders[i] = list(orders[i])  # Not good cast
+        for j in range(len(orders[i])):
+            orders[i][j] = orders[i][j] * 10**-4  # in angstroms
 
-    # print("Первый блок:", orders[0])
     print(f"start wavelenght: {orders[0][0]}")
     print(f"start wavelenght: {orders[-1][-1]}")
-
     return orders
 
 if __name__ == "__main__":
     # data = tab_spectra("dech30.tab")
     # print(data)
     data = fds_loader("data/fits/s693011s.fds")
-    
