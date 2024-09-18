@@ -51,7 +51,7 @@ to control the binning, for example,
 for 2 by 2 the block size will already be 1024,
 and the number of orders will drop by half
 """
-def fds_loader(path2data: str, orders_num=40, values_per_block=2028):
+def fds_loader(path2data: str, orders_num=40, values_per_block=2048):
     block_size = 4
     total_values = orders_num * values_per_block
 
@@ -73,9 +73,19 @@ def fds_loader(path2data: str, orders_num=40, values_per_block=2028):
 
     print(f"start wavelenght: {orders[0][0]}")
     print(f"start wavelenght: {orders[-1][-1]}")
+
     return orders
+
+
+def make_txt_from_spectra(path2spectra: str, path2fds: str):
+    intens_vals = dech_fits_loader(path2spectra)
+    ang_vals =  fds_loader(path2fds)
+
+    return [intens_vals, ang_vals]
 
 if __name__ == "__main__":
     # data = tab_spectra("dech30.tab")
     # print(data)
-    data = fds_loader("data/fits/s693011s.fds")
+    # data = fds_loader("data/fits/s693011s.fds")
+    data = make_txt_from_spectra("data/fits/e693006s.fits.200", "data/fits/s693011s.fds")
+    print(data)
