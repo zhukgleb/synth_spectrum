@@ -13,7 +13,7 @@ but in this case all orders will not be saved in order,
 but written down in a column, which creates a little confusion
 """
 def tab_spectra(filepath: str, save=False) -> ndarray:
-    data = genfromtxt(filepath)
+    data = genfromtxt(filepath, skip_header=1)
     all_wave = []
     all_flux = []
     
@@ -28,7 +28,7 @@ def tab_spectra(filepath: str, save=False) -> ndarray:
     output =  column_stack((conc_wave, conc_flux))
     
     if save:
-        savetxt("filepath" + "concat.txt", output)
+        savetxt(filepath + ".concat", output)
     else:
         return output
 
@@ -43,7 +43,7 @@ def dech_fits_loader(path2data: str):
     return image_data[0]
 
 
-""""
+"""
 Сonverts from a hex file fds to a decimal one.
 Of the useful and necessary -- this is the number of orders,
 which affects the final extraction. It is also important
@@ -87,5 +87,6 @@ if __name__ == "__main__":
     # data = tab_spectra("dech30.tab")
     # print(data)
     # data = fds_loader("data/fits/s693011s.fds")
-    data = make_txt_from_spectra("data/fits/e693006s.fits.200", "data/fits/s693011s.fds")
-    print(data)
+    # data = make_txt_from_spectra("data/fits/e693006s.fits.200", "data/fits/s693011s.fds")
+    # print(data)
+    tab_spectra("data/irasz_1.tab", save=True)
