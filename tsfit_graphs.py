@@ -23,6 +23,7 @@ def teff_graph(path2result: str):
 
 
 
+
 if __name__ == "__main__":
     t_path = "data/chem/02229_teff.dat"
     teff_graph(t_path)
