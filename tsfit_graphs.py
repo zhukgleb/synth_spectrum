@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scienceplots
 
-
 def teff_graph(path2result: str):
     data = np.genfromtxt(path2result)
     data = data[(data[:, -1] == 0) & (data[:, -2] == 0)]  # Remove all warning and error lines
@@ -20,9 +19,6 @@ def teff_graph(path2result: str):
         ax.set_ylabel("EW")
         plt.show()
     print(data)
-
-
-
 
 if __name__ == "__main__":
     t_path = "data/chem/02229_teff.dat"
