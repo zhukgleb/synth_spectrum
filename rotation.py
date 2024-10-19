@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import scienceplots
 
 # Определение функции инвертированной гауссианы для абсорбции
 def inverted_gaussian(x, amp, mu, sigma):
@@ -32,10 +33,10 @@ def calculate_fwhm_absorption_fit(spectrum, line_mask):
         popt, pcov = curve_fit(inverted_gaussian, wavelength_line, intensity_line, p0=initial_guess)
         perr = np.sqrt(np.diag(pcov))
     except RuntimeError:
-        print("Фитирование не удалось.")
+        # print("Фитирование не удалось.")
         return 0, 0
     except ValueError:
-        print("Value error")
+        # print("Value error")
         return 0, 0
     
     # Извлечение параметра sigma для вычисления FWHM
@@ -56,15 +57,18 @@ if __name__ == "__main__":
     # 1th column left wing of line, 2th -- center and 3th are right wing
     linemask = np.genfromtxt(path2linemask)
     sigma, sigma_err = [], []
-    x_list = []
     for i in range(len(linemask)):
         s, s_err = calculate_fwhm_absorption_fit(spectrum_data, linemask[i])
         sigma.append(s)
         sigma_err.append(s_err)
-        x_list.append(i)
+    
+    sigma = np.array(sigma)
+    sigma_err = np.array(sigma_err)
+    good_indexes = np.where((sigma > 0) & (sigma < 5) & (sigma_err < 1))
+    print(good_indexes)
+    sigma = sigma[good_indexes]
+    sigma_err = sigma_err[good_indexes]
 
-
-    plt.errorbar(x_list, sigma, yerr=sigma_err, fmt="o")
-    plt.show()
-    # print(fwhm)
-
+    with plt.style.context('science'):
+        plt.errorbar([x for x in range(len(sigma))], sigma, yerr=sigma_err, fmt="o", color="black", alpha=0.8)
+        plt.show()
