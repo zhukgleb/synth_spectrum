@@ -34,16 +34,16 @@ def calculate_fwhm_absorption_fit(spectrum, line_mask):
         perr = np.sqrt(np.diag(pcov))
     except RuntimeError:
         # print("Фитирование не удалось.")
-        return 0, 0
+        return 0, 0, 0, 0
     except ValueError:
         # print("Value error")
-        return 0, 0
+        return 0, 0, 0, 0
     
     # Извлечение параметра sigma для вычисления FWHM
-    _, _, sigma = popt
+    depth, rv, sigma = popt
     fwhm = 2 * np.sqrt(2 * np.log(2)) * sigma  # Формула FWHM для гауссианы
     
-    return sigma, perr[2]
+    return fwhm, depth, rv, 2 * np.sqrt(2 * np.log(2)) * perr[2]
 
 
 
@@ -56,19 +56,34 @@ if __name__ == "__main__":
     spectrum_data = np.genfromtxt(path2spectrum)
     # 1th column left wing of line, 2th -- center and 3th are right wing
     linemask = np.genfromtxt(path2linemask)
-    sigma, sigma_err = [], []
+    fwhm, depth, rv,  fwhm_err = [], [], [], []
     for i in range(len(linemask)):
-        s, s_err = calculate_fwhm_absorption_fit(spectrum_data, linemask[i])
-        sigma.append(s)
-        sigma_err.append(s_err)
+        s, d, r,  s_err = calculate_fwhm_absorption_fit(spectrum_data, linemask[i])
+        fwhm.append(s)
+        depth.append(d)
+        fwhm_err.append(s_err)
+        rv.append(r)  # Not good name...
     
-    sigma = np.array(sigma)
-    sigma_err = np.array(sigma_err)
-    good_indexes = np.where((sigma > 0) & (sigma < 5) & (sigma_err < 1))
-    print(good_indexes)
-    sigma = sigma[good_indexes]
-    sigma_err = sigma_err[good_indexes]
+    fwhm = np.array(fwhm)
+    fwhm_err = np.array(fwhm_err)
+    depth = np.array(depth)
+    rv = np.array(rv)
 
+    good_indexes = np.where((fwhm > 0) & (fwhm < 5) & (fwhm_err < 1))
+    fwhm = fwhm[good_indexes]
+    fwhm_err = fwhm_err[good_indexes]
+    depth = depth[good_indexes]
+    rv = rv[good_indexes]
+    lm = linemask[good_indexes]
+
+    # x_val = [x for x in range(len(fwhm))]
+    lm = [lm[x][1] for x in range(len(fwhm))]
     with plt.style.context('science'):
-        plt.errorbar([x for x in range(len(sigma))], sigma, yerr=sigma_err, fmt="o", color="black", alpha=0.8)
-        plt.show()
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.set_title("FWHM versus wavelength")
+        ax.set_ylabel("FWHM")
+        ax.set_xlabel("Number of mask")
+        ax.errorbar(lm, fwhm, yerr=fwhm_err, fmt="none", ecolor="black", alpha=0.8, mew=4)
+        sc = ax.scatter(lm, fwhm, c=depth, cmap="plasma")
+        plt.colorbar(sc)
+        plt.savefig("rotation_probe.pdf", dpi=150)
