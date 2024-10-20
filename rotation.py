@@ -72,7 +72,7 @@ if __name__ == "__main__":
     good_indexes = np.where((fwhm > 0) & (fwhm < 5) & (fwhm_err < 1))
     fwhm = fwhm[good_indexes]
     fwhm_err = fwhm_err[good_indexes]
-    depth = depth[good_indexes]
+    depth = depth[good_indexes] * -1
     rv = rv[good_indexes]
     lm = linemask[good_indexes]
 
@@ -80,10 +80,10 @@ if __name__ == "__main__":
     lm = [lm[x][1] for x in range(len(fwhm))]
     with plt.style.context('science'):
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.set_title("FWHM versus wavelength")
+        ax.set_title(r"FWHM versus wavelength, IRAS Z02229+6208")
         ax.set_ylabel("FWHM")
-        ax.set_xlabel("Number of mask")
+        ax.set_xlabel(r"Wavelength, \AA")
         ax.errorbar(lm, fwhm, yerr=fwhm_err, fmt="none", ecolor="black", alpha=0.8, mew=4)
         sc = ax.scatter(lm, fwhm, c=depth, cmap="plasma")
-        plt.colorbar(sc)
-        plt.savefig("rotation_probe.pdf", dpi=150)
+        plt.colorbar(sc, label="Depth")
+        plt.show()
