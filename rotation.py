@@ -82,6 +82,10 @@ if __name__ == "__main__":
     ddepth = ddepth[good_indexes]
     drv = drv[good_indexes]
     dsigma = dsigma[good_indexes]
+    save = True
+    if save:
+        np.savetxt("fwhm_data.txt", np.column_stack((rv, sigma, depth, dsigma)))
+        
 
     with plt.style.context('science'):
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -91,4 +95,7 @@ if __name__ == "__main__":
         ax.errorbar(rv, sigma * 2.335, yerr=dsigma* 2.335, fmt="none", ecolor="black", alpha=0.8, mew=4)
         sc = ax.scatter(rv, sigma * 2.335, c=depth, cmap="plasma")
         plt.colorbar(sc, label="Depth")
-        plt.savefig("rotation.pdf", dpi=150)
+        if save:
+            plt.savefig("rotation.pdf", dpi=150)
+        else:
+            plt.show()
