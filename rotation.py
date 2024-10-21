@@ -6,46 +6,6 @@ import scienceplots
 def inverted_gaussian(x, amp, mu, sigma):
     return 1-amp * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
-
-def calculate_fwhm_absorption_fit(spectrum, line_mask):
-    # Извлечение данных
-    wavelength = spectrum[:, 0]
-    intensity = spectrum[:, 1]
-    
-    left_wing, line_center, right_wing = line_mask
-    
-    # mask = (wavelength >= left_wing) & (wavelength <= right_wing)
-    # wavelength_line = wavelength[mask]
-    # intensity_line = intensity[mask]
-    
-    mask = np.where((wavelength >= left_wing - 1) & (wavelength <= right_wing + 1))
-    wavelength_line = wavelength[mask]
-    intensity_line = intensity[mask]
-
-    try:
-        initial_guess = [np.abs(np.min(intensity_line)), line_center, (right_wing - left_wing) / 2.0]
-    except ValueError:
-        initial_guess = [0, 0, 0]
-    
-    # Аппроксимация данных инвертированной гауссианой
-    try:
-        popt, pcov = curve_fit(inverted_gaussian, wavelength_line, intensity_line, p0=initial_guess, maxfev=50000)
-        perr = np.sqrt(np.diag(pcov))
-        print("Fit complete")
-    except RuntimeError:
-        print("Fit down")
-        return 0, 0, 0, 0
-    except ValueError:
-        print("Value error")
-        return 0, 0, 0, 0
-    
-    # Извлечение параметра sigma для вычисления FWHM
-    depth, rv, sigma = popt
-    fwhm = 2 * np.sqrt(2 * np.log(2)) * sigma  # Формула FWHM для гауссианы
-    
-    return fwhm, depth, rv, 2 * np.sqrt(2 * np.log(2)) * perr[2]
-
-
 def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     wavelength = spectrum[:, 0]
     intens = spectrum[:, 1]
