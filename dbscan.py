@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.cluster import DBSCAN
+from scipy import stats
+import scienceplots
 
 # TO DO:
 # Write a DB func
@@ -30,9 +32,6 @@ for epsilon in range(1, 11, 1):
         except ValueError:
             params.append([epsilon / 10, samples, 0])
 
-
-
-import scienceplots
 params = np.array(params)
 with plt.style.context('science'):
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -49,8 +48,8 @@ with plt.style.context('science'):
     CS = ax.contourf(x, y, z, levels=levels, cmap="plasma")
     cbar = fig.colorbar(CS)
     cbar.ax.set_ylabel('Silhouette Coefficient')
+    # plt.savefig("Optimal_params.pdf", dpi=150)
     plt.show()
-    plt.close()
 
 good_indexes = np.where((params[:, 2] == z.max()))
 good_params = params[good_indexes][0]
@@ -70,33 +69,60 @@ unique_labels = set(labels)
 core_samples_mask = np.zeros_like(labels, dtype=bool)
 core_samples_mask[db.core_sample_indices_] = True
 
-colors = [plt.cm.Set2(each) for each in np.linspace(0, 1, len(unique_labels))]
-for k, col in zip(unique_labels, colors):
-    if k == -1:
-        # Black used for noise.
-        col = [0, 0, 0, 1]
+with plt.style.context('science'):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    colors = [plt.cm.Set1(each) for each in np.linspace(0, 1, len(unique_labels))]
+    for k, col in zip(unique_labels, colors):
+        if k == -1:
+            # Black used for noise.
+            col = [0, 0, 0, 1]
 
-    class_member_mask = labels == k
+        class_member_mask = labels == k
 
-    xy = X[class_member_mask & core_samples_mask]
-    plt.plot(
-        xy[:, 0],
-        xy[:, 1],
-        "o",
-        markerfacecolor=tuple(col),
-        markeredgecolor="k",
-        markersize=14,
-    )
+        xy = X[class_member_mask & core_samples_mask]
+        ax.plot(
+            xy[:, 0],
+            xy[:, 1],
+            "o",
+            markerfacecolor=tuple(col),
+            markeredgecolor="k",
+            markersize=14,
+        )
 
-    xy = X[class_member_mask & ~core_samples_mask]
-    plt.plot(
-        xy[:, 0],
-        xy[:, 1],
-        "o",
-        markerfacecolor=tuple(col),
-        markeredgecolor="k",
-        markersize=6,
-    )
+        xy = X[class_member_mask & ~core_samples_mask]
+        ax.plot(
+            xy[:, 0],
+            xy[:, 1],
+            "o",
+            markerfacecolor=tuple(col),
+            markeredgecolor="k",
+            markersize=6,
+        )
+    ax.set_ylabel(r"FWHM, \AA")
+    ax.set_xlabel(r"Wavelength, \AA")
 
-plt.title(f"Estimated number of clusters: {n_clusters_}")
+    plt.title(f"Estimated number of clusters: {n_clusters_}")
+    plt.legend()
+#     plt.savefig("Cluter.pdf", dpi=150)
+    plt.show()
+
+class_member_mask = labels == 0
+cluster = X[class_member_mask & core_samples_mask]
+fwhm_mean = np.mean(cluster[:, 1])
+fwhm_std = np.std(cluster[:, 1])
+print(f"cluster mean: {fwhm_mean}")
+print(f"cluster std: {fwhm_std}")
+
+res = stats.linregress(cluster[:, 0], cluster[:, 1])
+print(f"R-squared: {res.rvalue**2:.6f}")
+plt.plot(cluster[:, 0], cluster[:, 1], 'o', label='original data')
+plt.plot(cluster[:, 0], res.intercept + res.slope*cluster[:, 0], 'r', label='fitted line')
+plt.legend()
 plt.show()
+from scipy.stats import t
+tinv = lambda p, df: abs(t.ppf(p/2, df))
+
+ts = tinv(0.05, len(x)-2)
+print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
+print(f"intercept (95%): {res.intercept:.6f}"
+      f" +/- {ts*res.intercept_stderr:.6f}")
