@@ -13,11 +13,9 @@ def teff_graph(path2result: str):
     ]  # Remove all warning and error lines
     teff = data[:, 1]
     teff_err = data[:, 2]
-    wave_center = data[:, 3]
     ew = data[:, -3]
-    rv = data[:, 4]
     with plt.style.context("science"):
-        fig, ax = plt.subplots(figsize=(4, 4))
+        _, ax = plt.subplots(figsize=(4, 4))
         ax.errorbar(
             teff,
             ew,
@@ -94,31 +92,34 @@ def plot_density_df_results(
         )
         return
     try:
-        # creates density map for the plot
-        x_array = df_results[x_axis_column]
-        y_array = df_results[y_axis_column]
-        xy_point_density = np.vstack([x_array, y_array])
-        z_point_density = gaussian_kde(xy_point_density)(xy_point_density)
-        idx_sort = z_point_density.argsort()
-        x_plot, y_plot, z_plot = (
-            x_array[idx_sort],
-            y_array[idx_sort],
-            z_point_density[idx_sort],
-        )
+        with plt.style.context("science"):
+            # creates density map for the plot
+            x_array = df_results[x_axis_column]
+            y_array = df_results[y_axis_column]
+            xy_point_density = np.vstack([x_array, y_array])
+            z_point_density = gaussian_kde(xy_point_density)(xy_point_density)
+            idx_sort = z_point_density.argsort()
+            x_plot, y_plot, z_plot = (
+                x_array[idx_sort],
+                y_array[idx_sort],
+                z_point_density[idx_sort],
+            )
 
-        density = plt.scatter(x_plot, y_plot, c=z_plot, zorder=-1, vmin=0, **pltargs)
+            density = plt.scatter(
+                x_plot, y_plot, c=z_plot, zorder=-1, vmin=0, **pltargs
+            )
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.colorbar(density)
-        plt.xlabel(x_axis_column)
-        plt.ylabel(y_axis_column)
-        if invert_x_axis:
-            plt.gca().invert_xaxis()
-        if invert_y_axis:
-            plt.gca().invert_yaxis()
-        plt.show()
-        plt.close()
+            plt.xlim(xlim)
+            plt.ylim(ylim)
+            plt.colorbar(density)
+            plt.xlabel(x_axis_column)
+            plt.ylabel(y_axis_column)
+            if invert_x_axis:
+                plt.gca().invert_xaxis()
+            if invert_y_axis:
+                plt.gca().invert_yaxis()
+            plt.show()
+            plt.close()
     except LinAlgError:
         print("LinAlgError, so doing normal scatter plot")
         plot_scatter_df_results(

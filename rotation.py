@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import scienceplots
 
+
 def inverted_gaussian(x, amp, mu, sigma):
-    return 1-amp * np.exp(-(x - mu)**2 / (2 * sigma**2))
+    return 1 - amp * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+
 
 def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     wavelength = spectrum[:, 0]
@@ -13,7 +15,9 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     # need to cut spectrum out of line
     # 4840.8
     plus_rv = 0.0
-    crop_mask = np.where((wavelength >= left_wing + plus_rv) & (wavelength <= right_wing + plus_rv))
+    crop_mask = np.where(
+        (wavelength >= left_wing + plus_rv) & (wavelength <= right_wing + plus_rv)
+    )
     wavelength = wavelength[crop_mask]
     intens = intens[crop_mask]
 
@@ -26,12 +30,18 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     # popt, pcov = curve_fit(inverted_gaussian, x, y, p0=[np.abs(min(y)), line_center, (right_wing - left_wing) / 2.0])
     # plt.plot(x, inverted_gaussian(x, popt[0], popt[1], popt[2]))
     # plt.show()
-    try: 
-        initial_guess = [np.abs(min(wavelength)), line_center, (right_wing - left_wing) / 2.0]
+    try:
+        initial_guess = [
+            np.abs(min(wavelength)),
+            line_center,
+            (right_wing - left_wing) / 2.0,
+        ]
     except ValueError:
         initial_guess = [0, 0, 0]
     try:
-        popt, pcov = curve_fit(inverted_gaussian, wavelength, intens, p0=initial_guess, maxfev=50000)
+        popt, pcov = curve_fit(
+            inverted_gaussian, wavelength, intens, p0=initial_guess, maxfev=50000
+        )
         perr = np.sqrt(np.diag(pcov))
         print(f"{line_center} ok")
     except RuntimeError:
@@ -41,7 +51,6 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
         print(f"{line_center} not ok (value)")
         return [-2, -2, -2], [-2, -2, -2]
 
-    
     # fit_x = np.arange(min(wavelength), max(wavelength), 0.001)
     # fit_y = inverted_gaussian(fit_x, popt[0], popt[1], popt[2])
     # plt.plot(wavelength, intens)
@@ -49,6 +58,7 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     # plt.show()
 
     return popt, perr
+
 
 if __name__ == "__main__":
     path2spectrum = "iras_2020.txt"
@@ -62,20 +72,23 @@ if __name__ == "__main__":
     for i in range(len(linemask)):
         params_arr.append(calculate_abs_params(spectrum_data, linemask[i]))
 
-
     popt, perr = list(zip(*params_arr))
     depth, rv, sigma = list(zip(*popt))
     ddepth, drv, dsigma = list(zip(*perr))
 
-    depth = np.array(depth)    
+    depth = np.array(depth)
     rv = np.array(rv)
     sigma = np.array(sigma)
     ddepth = np.array(ddepth)
     drv = np.array(drv)
     dsigma = np.array(dsigma)
 
-
-    good_indexes = np.where((sigma * 2.335 > 0) & (sigma * 2.335 < 5) & (dsigma * 2.335 < 1) & (dsigma * 2.335 > 0) * (depth < 0.9))
+    good_indexes = np.where(
+        (sigma * 2.335 > 0)
+        & (sigma * 2.335 < 5)
+        & (dsigma * 2.335 < 1)
+        & (dsigma * 2.335 > 0) * (depth < 0.9)
+    )
     depth = depth[good_indexes]
     rv = rv[good_indexes]
     sigma = sigma[good_indexes]
@@ -85,14 +98,21 @@ if __name__ == "__main__":
     save = True
     if save:
         np.savetxt("fwhm_data.txt", np.column_stack((rv, sigma, depth, dsigma)))
-        
 
-    with plt.style.context('science'):
+    with plt.style.context("science"):
         fig, ax = plt.subplots(figsize=(6, 4))
         ax.set_title(r"FWHM versus wavelength, IRAS Z02229+6208")
         ax.set_ylabel("FWHM")
         ax.set_xlabel(r"Wavelength, \AA")
-        ax.errorbar(rv, sigma * 2.335, yerr=dsigma* 2.335, fmt="none", ecolor="black", alpha=0.8, mew=4)
+        ax.errorbar(
+            rv,
+            sigma * 2.335,
+            yerr=dsigma * 2.335,
+            fmt="none",
+            ecolor="black",
+            alpha=0.8,
+            mew=4,
+        )
         sc = ax.scatter(rv, sigma * 2.335, c=depth, cmap="plasma")
         plt.colorbar(sc, label="Depth")
         if save:
