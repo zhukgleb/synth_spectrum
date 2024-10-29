@@ -97,6 +97,8 @@ if __name__ == "__main__":
     dsigma = dsigma[good_indexes]
     save = True
     if save:
+        sigma = sigma * 2.335
+        dsigma = dsigma * 2.235
         np.savetxt("fwhm_data.txt", np.column_stack((rv, sigma, depth, dsigma)))
 
     with plt.style.context("science"):

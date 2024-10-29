@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.cluster import DBSCAN
 from scipy import stats
+from scipy.stats import t
 import scienceplots
 
 # TO DO:
@@ -47,7 +48,7 @@ with plt.style.context("science"):
     CS = ax.contourf(x, y, z, levels=levels, cmap="plasma")
     cbar = fig.colorbar(CS)
     cbar.ax.set_ylabel("Silhouette Coefficient")
-    # plt.savefig("Optimal_params.pdf", dpi=150)
+    plt.savefig("Optimal_params.pdf", dpi=150)
     plt.show()
 
 good_indexes = np.where((params[:, 2] == z.max()))
@@ -102,8 +103,7 @@ with plt.style.context("science"):
 
     plt.title(f"Estimated number of clusters: {n_clusters_}")
     plt.legend()
-    #     plt.savefig("Cluter.pdf", dpi=150)
-    plt.show()
+    plt.savefig("Cluter.pdf", dpi=150)
 
 class_member_mask = labels == 0
 cluster = X[class_member_mask & core_samples_mask]
@@ -119,8 +119,6 @@ plt.plot(
     cluster[:, 0], res.intercept + res.slope * cluster[:, 0], "r", label="fitted line"
 )
 plt.legend()
-plt.show()
-from scipy.stats import t
 
 tinv = lambda p, df: abs(t.ppf(p / 2, df))
 
