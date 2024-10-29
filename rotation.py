@@ -97,7 +97,7 @@ if __name__ == "__main__":
     dsigma = dsigma[good_indexes]
     save = True
     if save:
-        sigma = sigma * 2.335
+        sigma = sigma * 2.335  # it's fwhm now..
         dsigma = dsigma * 2.235
         np.savetxt("fwhm_data.txt", np.column_stack((rv, sigma, depth, dsigma)))
 
@@ -108,8 +108,8 @@ if __name__ == "__main__":
         ax.set_xlabel(r"Wavelength, \AA")
         ax.errorbar(
             rv,
-            sigma * 2.335,
-            yerr=dsigma * 2.335,
+            sigma,
+            yerr=dsigma,
             fmt="none",
             ecolor="black",
             alpha=0.8,
