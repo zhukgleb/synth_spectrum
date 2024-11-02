@@ -135,5 +135,12 @@ def plot_density_df_results(
 
 
 if __name__ == "__main__":
-    t_path = "data/chem/02229_teff.dat"
-    teff_graph(t_path)
+    # t_path = "data/chem/02229_teff.dat"
+    #     teff_graph(t_path)
+    #
+    from tsfit_utils import get_model_data
+    from config_loader import tsfit_output
+
+    out = "Oct-31-2024-23-28-47_0.2189189215158336_LTE_Fe_1D"
+    pd_data = get_model_data(tsfit_output + out)
+    print(pd_data)
