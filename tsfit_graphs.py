@@ -1,8 +1,9 @@
+from matplotlib.style import context
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
-from numpy.linalg import LinAlgError
+from scipy.stats import linregress, t
 import scienceplots
 
 
@@ -82,13 +83,37 @@ def plot_metall(data: pd.DataFrame):
     )
 
     with plt.style.context("science"):
-        fig, ax = plt.subplots(figsize=(6, 4))
+        _, ax = plt.subplots(figsize=(6, 4))
         ax.set_title(r"Metallicity IRAS Z02229+6208")
-        ax.set_ylabel("FWHM")
+        ax.set_ylabel(r"$\chi^{2}$")
         ax.set_xlabel(r"Metallicity, [Fe/H]")
         ax.set_ylim((0, 10))
         density = ax.scatter(x_plot, y_plot, c=z_plot)
         plt.colorbar(density)
+        plt.show()
+
+
+def plot_ion_balance(data: pd.DataFrame):
+    metallicity = data["Fe_H"].to_numpy(float)
+    ew = data["ew"].to_numpy(float)
+    ew = ew * 1000
+    lamb = data["wave_center"].to_numpy(float)
+    rel_ew = ew / lamb
+
+    res = linregress(rel_ew, metallicity)
+
+    # ts = tinv(0.05, len(x) - 2)
+    # print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
+    # print(f"intercept (95%): {res.intercept:.6f}" f" +/- {ts*res.intercept_stderr:.6f}")
+    print(f"Slope is: {res.slope}")
+    with plt.style.context("science"):
+        _, ax = plt.subplots(figsize=(6, 4))
+        ax.set_title(r"Ionization balance of IRAS Z02229+6208")
+        ax.set_ylabel(r"Metallicity, [Fe/H]")
+        ax.set_xlabel(r"$EW / \lambda$")
+        ax.set_xlim((0, 100))
+        plt.scatter(rel_ew, metallicity, color="black", alpha=0.5)
+        plt.plot(rel_ew, res.intercept + res.slope * rel_ew, ls="--", color="black")
         plt.show()
 
 
@@ -101,5 +126,4 @@ if __name__ == "__main__":
 
     out = "Oct-28-2024-16-30-31_0.8750247136632259_LTE_Fe_1D"
     pd_data = get_model_data(tsfit_output + out)
-    print(pd_data)
-    plot_metall(pd_data)
+    plot_ion_balance(pd_data)
