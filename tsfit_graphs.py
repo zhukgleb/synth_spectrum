@@ -68,70 +68,28 @@ def plot_scatter_df_results(
     plt.close()
 
 
-def plot_density_df_results(
-    df_results: pd.DataFrame,
-    x_axis_column: str,
-    y_axis_column: str,
-    xlim=None,
-    ylim=None,
-    invert_x_axis=False,
-    invert_y_axis=False,
-    **pltargs,
-):
-    if np.size(df_results[x_axis_column]) == 1:
-        print("Only one point is found, so doing normal scatter plot")
-        plot_scatter_df_results(
-            df_results,
-            x_axis_column,
-            y_axis_column,
-            xlim=xlim,
-            ylim=ylim,
-            invert_x_axis=invert_x_axis,
-            invert_y_axis=invert_y_axis,
-            **pltargs,
-        )
-        return
-    try:
-        with plt.style.context("science"):
-            # creates density map for the plot
-            x_array = df_results[x_axis_column]
-            y_array = df_results[y_axis_column]
-            xy_point_density = np.vstack([x_array, y_array])
-            z_point_density = gaussian_kde(xy_point_density)(xy_point_density)
-            idx_sort = z_point_density.argsort()
-            x_plot, y_plot, z_plot = (
-                x_array[idx_sort],
-                y_array[idx_sort],
-                z_point_density[idx_sort],
-            )
+def plot_metall(data: pd.DataFrame):
+    metallicity = data["Fe_H"].to_numpy(float)
+    error = data["chi_squared"].to_numpy(float)
 
-            density = plt.scatter(
-                x_plot, y_plot, c=z_plot, zorder=-1, vmin=0, **pltargs
-            )
+    xy_point_density = np.vstack([metallicity, error])
+    z_point_density = gaussian_kde(xy_point_density)(xy_point_density)
+    idx_sort = z_point_density.argsort()
+    x_plot, y_plot, z_plot = (
+        metallicity[idx_sort],
+        error[idx_sort],
+        z_point_density[idx_sort],
+    )
 
-            plt.xlim(xlim)
-            plt.ylim(ylim)
-            plt.colorbar(density)
-            plt.xlabel(x_axis_column)
-            plt.ylabel(y_axis_column)
-            if invert_x_axis:
-                plt.gca().invert_xaxis()
-            if invert_y_axis:
-                plt.gca().invert_yaxis()
-            plt.show()
-            plt.close()
-    except LinAlgError:
-        print("LinAlgError, so doing normal scatter plot")
-        plot_scatter_df_results(
-            df_results,
-            x_axis_column,
-            y_axis_column,
-            xlim=xlim,
-            ylim=ylim,
-            invert_x_axis=invert_x_axis,
-            invert_y_axis=invert_y_axis,
-            **pltargs,
-        )
+    with plt.style.context("science"):
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.set_title(r"Metallicity IRAS Z02229+6208")
+        ax.set_ylabel("FWHM")
+        ax.set_xlabel(r"Metallicity, [Fe/H]")
+        ax.set_ylim((0, 10))
+        density = ax.scatter(x_plot, y_plot, c=z_plot)
+        plt.colorbar(density)
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -141,6 +99,7 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out = "Oct-31-2024-23-28-47_0.2189189215158336_LTE_Fe_1D"
+    out = "Oct-28-2024-16-30-31_0.8750247136632259_LTE_Fe_1D"
     pd_data = get_model_data(tsfit_output + out)
     print(pd_data)
+    plot_metall(pd_data)
