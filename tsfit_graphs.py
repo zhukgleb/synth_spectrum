@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from scipy.stats import linregress, t
+from sklearn.linear_model import LinearRegression
 import scienceplots
 
 
@@ -99,21 +100,41 @@ def plot_ion_balance(data: pd.DataFrame):
     ew = ew * 1000
     lamb = data["wave_center"].to_numpy(float)
     rel_ew = ew / lamb
-
-    res = linregress(rel_ew, metallicity)
-
-    # ts = tinv(0.05, len(x) - 2)
-    # print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
-    # print(f"intercept (95%): {res.intercept:.6f}" f" +/- {ts*res.intercept_stderr:.6f}")
-    print(f"Slope is: {res.slope}")
+    # Regression
+    x = rel_ew.reshape((-1, 1))
+    y = metallicity
+    model = LinearRegression().fit(x, y)
+    r_sq = model.score(x, y)
+    slope = model.coef_
+    slope = slope[0]
+    intercept = model.intercept_
+    print("coefficient of determination:", r_sq)
+    print("intercept:", model.intercept_)
+    print("slope:", model.coef_)
+    xfit = np.linspace(0, 100, 1000)
+    yfit = model.predict(xfit[:, np.newaxis])
     with plt.style.context("science"):
         _, ax = plt.subplots(figsize=(6, 4))
         ax.set_title(r"Ionization balance of IRAS Z02229+6208")
         ax.set_ylabel(r"Metallicity, [Fe/H]")
         ax.set_xlabel(r"$EW / \lambda$")
         ax.set_xlim((0, 100))
-        plt.scatter(rel_ew, metallicity, color="black", alpha=0.5)
-        plt.plot(rel_ew, res.intercept + res.slope * rel_ew, ls="--", color="black")
+        text = f"Slope: {slope:.2f}\nIntercept: {intercept:.2f}"
+        plt.annotate(
+            text,
+            xy=(0.95, 0.95),  # относительное положение (5% слева, 95% сверху)
+            xycoords="axes fraction",
+            ha="right",
+            va="top",
+            bbox=dict(
+                boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightgrey"
+            ),
+        )
+        plt.scatter(
+            rel_ew, metallicity, color="black", alpha=0.5, label="derived metallicity"
+        )
+        plt.plot(xfit, yfit, label="linear regression")
+        plt.legend()
         plt.show()
 
 
