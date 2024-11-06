@@ -1,10 +1,10 @@
-from matplotlib.style import context
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
-from scipy.stats import linregress, t
 from sklearn.linear_model import LinearRegression
+from tsfit_utils import get_model_data
+from tsfit_utils import clean_pd
 import scienceplots
 
 
@@ -119,10 +119,10 @@ def plot_ion_balance(data: pd.DataFrame):
         ax.set_ylabel(r"Metallicity, [Fe/H]")
         ax.set_xlabel(r"$EW / \lambda$")
         ax.set_xlim((0, 100))
-        text = f"Slope: {slope:.2f}\nIntercept: {intercept:.2f}"
+        text = f"Slope: {slope:.4f}\nIntercept: {intercept:.2f}\nR squared: {r_sq:.2f}"
         plt.annotate(
             text,
-            xy=(0.95, 0.95),  # относительное положение (5% слева, 95% сверху)
+            xy=(0.95, 0.95),  # upper left corner
             xycoords="axes fraction",
             ha="right",
             va="top",
@@ -138,6 +138,10 @@ def plot_ion_balance(data: pd.DataFrame):
         plt.show()
 
 
+def spectrum_converge(path2output: str):
+    pass
+
+
 if __name__ == "__main__":
     # t_path = "data/chem/02229_teff.dat"
     #     teff_graph(t_path)
@@ -145,6 +149,8 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out = "Oct-28-2024-16-30-31_0.8750247136632259_LTE_Fe_1D"
+    out = "Nov-05-2024-23-28-17_0.054290201188499476_LTE_Fe_1D"
     pd_data = get_model_data(tsfit_output + out)
+    pd_data = clean_pd(pd_data, True, True)
+    plot_metall(pd_data)
     plot_ion_balance(pd_data)
