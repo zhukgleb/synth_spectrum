@@ -77,7 +77,21 @@ def get_spectra(path2output) -> List[Union[np.ndarray, np.ndarray]]:
 
     raw_synth = np.genfromtxt(raw_synth_path)
     conv_synth = np.genfromtxt(conv_synth_path)
-    return raw_synth, conv_synth
+    return [raw_synth, conv_synth]
+
+
+def make_report(path2output: str) -> None:
+    data = get_model_data(path2output)
+    print(data.columns.values)
+    metallicity_type = data.columns.values[5]  # Potential bug
+    data[metallicity_type] = data[metallicity_type].astype(float)
+    data["chi_squared"] = data["chi_squared"].astype(float)
+    data["Microturb"] = data["Microturb"].astype(float)
+    data["Macroturb"] = data["Macroturb"].astype(float)
+    data["rotation"] = data["rotation"].astype(float)
+    var = data[["Fe_H", "chi_squared", "Microturb", "Macroturb", "rotation"]].mean()
+    print(var)
+    pass
 
 
 if __name__ == "__main__":
@@ -87,4 +101,4 @@ if __name__ == "__main__":
     # )
     data_path = "/home/lambda/TSFitPy/output_files/Oct-04-2024-00-09-14_0.5542094694329981_LTE_Fe_1D/"
     # clean_linemask(linemask_path, data_path)
-    get_spectra(data_path)
+    make_report(data_path)
