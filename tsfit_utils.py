@@ -82,7 +82,6 @@ def get_spectra(path2output) -> List[Union[np.ndarray, np.ndarray]]:
 
 def make_report(path2output: str) -> None:
     data = get_model_data(path2output)
-    print(data.columns.values)
     metallicity_type = data.columns.values[5]  # Potential bug
     data[metallicity_type] = data[metallicity_type].astype(float)
     data["chi_squared"] = data["chi_squared"].astype(float)
