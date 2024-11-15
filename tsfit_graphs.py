@@ -153,4 +153,4 @@ if __name__ == "__main__":
     pd_data = get_model_data(tsfit_output + out)
     pd_data = clean_pd(pd_data, True, True)
     plot_metall(pd_data)
-    plot_ion_balance(pd_data)
+    # plot_ion_balance(pd_data)

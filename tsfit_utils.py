@@ -98,6 +98,5 @@ if __name__ == "__main__":
     #     linemask_path = (
     #         "/home/gamma/TSFitPy/input_files/linemask_files/Fe/fe12-lmask_VG_clear.txt"
     # )
-    data_path = "/home/lambda/TSFitPy/output_files/Oct-04-2024-00-09-14_0.5542094694329981_LTE_Fe_1D/"
+    data_path = "/home/lambda/TSFitPy/output_files/Oct-28-2024-16-30-31_0.8750247136632259_LTE_Fe_1D"
     # clean_linemask(linemask_path, data_path)
-    make_report(data_path)
