@@ -1,3 +1,4 @@
+from matplotlib.style import context
 import numpy as np
 from scipy.optimize import nnls
 import matplotlib.pyplot as plt
@@ -5,16 +6,17 @@ from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 from matplotlib.colors import LogNorm
 from scipy.signal import find_peaks
+import scienceplots
 
 # Загружаем спектры
 template = np.loadtxt("/home/gamma/postagb.spec")  # [λ, I]
-observed = np.loadtxt(
-    "/home/gamma/TSFitPy/input_files/observed_spectra/iras2020.txt"
-)  # [λ, I]
-# observed = np.genfromtxt("binary_spectrum.txt")
+# observed = np.loadtxt(
+#    "/home/gamma/TSFitPy/input_files/observed_spectra/iras2020.txt"
+# )  # [λ, I]
+observed = np.genfromtxt("collision.txt")
 
 
-wavelength_min, wavelength_max = 4700, 5900
+wavelength_min, wavelength_max = 4700, 5000
 mask = (observed[:, 0] >= wavelength_min) & (observed[:, 0] <= wavelength_max)
 observed = observed[mask]
 template = template[
@@ -94,14 +96,16 @@ for idx, bf_segment in enumerate(results):
         bf_map[:, start:end] = np.tile(bf_segment[:, None], (1, segment_width))
 
 # Визуализация BF-карты с логарифмической шкалой
-plt.figure(figsize=(12, 6))
-extent = [observed[:, 0].min(), observed[:, 0].max(), v_grid.min(), v_grid.max()]
-plt.imshow(bf_map, aspect="auto", origin="lower", extent=extent, cmap="plasma")
-plt.colorbar(label="BF Amplitude")
-plt.xlabel("Wavelength (Å)")
-plt.ylabel("Radial Velocity (km/s)")
-plt.title("Broadening Function Map (Logarithmic Scale)")
-plt.show()
+#
+with plt.style.context("science"):
+    plt.figure(figsize=(12, 6))
+    extent = [observed[:, 0].min(), observed[:, 0].max(), v_grid.min(), v_grid.max()]
+    plt.imshow(bf_map, aspect="auto", origin="lower", extent=extent, cmap="plasma")
+    plt.colorbar(label="BF Amplitude")
+    plt.xlabel("Wavelength (Å)")
+    plt.ylabel("Radial Velocity (km/s)")
+    plt.title("Broadening Function Map")
+    plt.show()
 
 
 broadening_matrix = np.zeros((len(v_grid), len(observed)))
@@ -113,12 +117,13 @@ for i, v in enumerate(v_grid):
     broadening_matrix[i] = shifted_template
 
 bf_profile, _ = nnls(broadening_matrix.T, observed[:, 1])
-plt.plot(v_grid, bf_profile)
-plt.xlabel("Radial Velocity (km/s)")
-plt.ylabel("BF Amplitude")
-plt.title("Broadening Function")
-plt.grid()
-plt.show()
+with plt.style.context("science"):
+    plt.plot(v_grid, bf_profile, color="black", alpha=0.8)
+    plt.xlabel("Radial Velocity (km/s)")
+    plt.ylabel("BF Amplitude")
+    plt.title("Broadening Function")
+    plt.grid()
+    plt.show()
 
 from scipy.signal import find_peaks
 
@@ -157,29 +162,32 @@ top_velocities, top_amplitudes = find_top_bf_peaks(
 )
 
 # Визуализация для каждого найденного пика
-plt.figure(figsize=(12, 8))
-for i, v in enumerate(top_velocities):
-    velocity_idx = (np.abs(v_grid - v)).argmin()  # Индекс скорости
-    bf_layer = bf_map[velocity_idx, :]  # BF слой для текущей скорости
+with plt.style.context("science"):
+    plt.figure(figsize=(12, 8))
+    for i, v in enumerate(top_velocities):
+        velocity_idx = (np.abs(v_grid - v)).argmin()  # Индекс скорости
+        bf_layer = bf_map[velocity_idx, :]  # BF слой для текущей скорости
 
-    # Масштабируем BF к спектру
-    bf_scaled = bf_layer / np.nanmax(bf_layer) * np.max(observed[:, 1])
+        # Масштабируем BF к спектру
+        bf_scaled = bf_layer / np.nanmax(bf_layer) * np.max(observed[:, 1])
 
-    # Построение графика
-    plt.subplot(3, 1, i + 1)
-    plt.plot(observed[:, 0], observed[:, 1], label="Observed Spectrum", color="blue")
-    plt.plot(
-        observed[:, 0],
-        bf_scaled,
-        label=f"BF Layer at {v:.1f} km/s",
-        color="orange",
-        linestyle="--",
-    )
-    plt.xlabel("Wavelength (Å)")
-    plt.ylabel("Intensity")
-    plt.title(f"Observed Spectrum with BF Layer at {v:.1f} km/s")
-    plt.legend()
-    plt.grid()
+        # Построение графика
+        plt.subplot(3, 1, i + 1)
+        plt.plot(
+            observed[:, 0], observed[:, 1], label="Observed Spectrum", color="black"
+        )
+        plt.plot(
+            observed[:, 0],
+            bf_scaled,
+            label=f"BF Layer at {v:.1f} km/s",
+            color="crimson",
+            linestyle="--",
+        )
+        plt.xlabel("Wavelength (Å)")
+        plt.ylabel("Intensity")
+        plt.title(f"Observed Spectrum with BF Layer at {v:.1f} km/s")
+        plt.legend()
+        plt.grid()
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
