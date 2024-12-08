@@ -13,8 +13,8 @@ from scipy.signal import correlate
 
 #    spectrum = np.genfromtxt("/home/lambda/code/synth_spectrum/iras2020.txt")
 # template = np.genfromtxt("/home/lambda/code/synth_spectrum/iras2020.txt")
-spectrum_raw = np.genfromtxt("/home/gamma/postagb.spec", usecols=(0, 1))
-template_raw = np.genfromtxt("/home/gamma/postagb.spec", usecols=(0, 1))
+spectrum_raw = np.genfromtxt("/home/lambda/postagb.spec", usecols=(0, 1))
+template_raw = np.genfromtxt("/home/lambda/postagb.spec", usecols=(0, 1))
 s_AA, s_flux = increese_resolution([spectrum_raw[:, 0], spectrum_raw[:, 1]], 10)
 t_AA, t_flux = increese_resolution([template_raw[:, 0], template_raw[:, 1]], 10)
 
@@ -32,17 +32,18 @@ spectrum = np.column_stack((s_AA, s_flux))
 template = np.column_stack((t_AA, t_flux))
 
 _, spectrum[:, 0] = pyasl.dopplerShift(
-    spectrum[:, 0], spectrum[:, 1], 50, edgeHandling="firstlast"
+    spectrum[:, 0], spectrum[:, 1], 16, edgeHandling="firstlast"
 )
 interp_func = interp1d(
     template[:, 0], template[:, 1], kind="linear", fill_value="extrapolate"
 )
-
+np.save("/home/lambda/postagb_cut.spec", spectrum)
 intensity2_aligned = interp_func(spectrum[:, 0])
 combined_intensity = spectrum[:, 1] + intensity2_aligned
 two_sys = np.copy(spectrum)
 two_sys[:, 0] = spectrum[:, 0]
 two_sys[:, 1] = combined_intensity
+np.savetxt("/home/lambda/two_sys.spec", two_sys)
 
 flux_unit = u.Unit("erg s^-1 cm^-2 AA^-1")
 unc = np.array([10e-20 for x in range(len(two_sys[:, 1]))]) * flux_unit

@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from data import extract_data, find_nearest, get_path2
 from scipy.interpolate import CubicSpline
@@ -13,13 +14,13 @@ ang_2, flux_2, _ = extract_data(get_path2("Test_spectrum_bad.syn"))
 start_ang = 4600
 end_ang = 5400
 
-index_start_1 = np.where(ang_1==start_ang)[0][0]
-index_end_1 = np.where(ang_1==end_ang)[0][0]
+index_start_1 = np.where(ang_1 == start_ang)[0][0]
+index_end_1 = np.where(ang_1 == end_ang)[0][0]
 ang_1 = ang_1[index_start_1:index_end_1]
 flux_1 = flux_1[index_start_1:index_end_1]
 
-index_start_2 = np.where(ang_2==start_ang)[0][0]
-index_end_2 = np.where(ang_2==end_ang)[0][0]
+index_start_2 = np.where(ang_2 == start_ang)[0][0]
+index_end_2 = np.where(ang_2 == end_ang)[0][0]
 ang_2 = ang_2[index_start_2:index_end_2]
 flux_2 = flux_2[index_start_2:index_end_2]
 
@@ -35,25 +36,30 @@ y_akima_2 = Akima1DInterpolator(ang_2, flux_2)
 y_cubicMT_2 = PchipInterpolator(ang_2, flux_2)
 
 # Difference part
-peaks_1, _ = find_peaks(1/flux_1, prominence=0.1)
-peaks_2_inter, _ = find_peaks(1/y_cubicBC_2(ang_inter), prominence=0.1)
+peaks_1, _ = find_peaks(1 / flux_1, prominence=0.1)
+peaks_2_inter, _ = find_peaks(1 / y_cubicBC_2(ang_inter), prominence=0.1)
 
 # Plot part
-font = {'family' : 'normal',
-        'weight' : 'normal',
-        'size'   : 21}
-import matplotlib
-matplotlib.rc('font', **font)
-plt.plot(ang_inter[peaks_2_inter], y_cubicBC_2(ang_inter)[peaks_2_inter], ".", color="blue")
+font = {"family": "normal", "weight": "normal", "size": 21}
+matplotlib.rc("font", **font)
+plt.plot(
+    ang_inter[peaks_2_inter], y_cubicBC_2(ang_inter)[peaks_2_inter], ".", color="blue"
+)
 plt.plot(ang_inter_norm, y_cubicBC_2(ang_inter_norm))
 plt.plot(ang_inter, y_cubicBC_2(ang_inter), label="Interpolated dots from 1A res")
 plt.xlabel("Wavelenght, Ang")
 plt.ylabel("Relative flux")
-plt.plot(ang_1, flux_1, "--", label='Ideal spectrum, 10E-3A res')
-plt.plot(ang_1[peaks_1], flux_1[peaks_1], ".", color="red", label='Line center ideal')
+plt.plot(ang_1, flux_1, "--", label="Ideal spectrum, 10E-3A res")
+plt.plot(ang_1[peaks_1], flux_1[peaks_1], ".", color="red", label="Line center ideal")
 p1 = ang_1[peaks_1]
 p2 = ang_inter[peaks_2_inter]
-plt.plot(p2, y_cubicBC_2(ang_inter)[peaks_2_inter], ".", color="blue", label='Line center interpolated') 
+plt.plot(
+    p2,
+    y_cubicBC_2(ang_inter)[peaks_2_inter],
+    ".",
+    color="blue",
+    label="Line center interpolated",
+)
 plt.legend()
 plt.show()
 # If we have a different number of peaks
@@ -62,7 +68,7 @@ if len(p1) > len(p2):
     delta_center_arr = [find_nearest(p1, p2[i]) - p2[i] for i in range(len(p2))]
 elif len(p1) < len(p2):
     delta_center_arr = [find_nearest(p1, p2[i]) - p2[i] for i in range(len(p1))]
-else: # If no
+else:  # If no
     delta_center_arr = [p2[i] - p2[i] for i in range(len(p1))]
 
 print(f"Mean delta is {np.mean(delta_center_arr)}")

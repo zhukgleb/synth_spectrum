@@ -2,9 +2,18 @@
 A small module of various functions for working with dech20/95 output files
 """
 
-from numpy import genfromtxt, concatenate, column_stack, savetxt, ndarray, unique
+from numpy import (
+    genfromtxt,
+    concatenate,
+    column_stack,
+    savetxt,
+    ndarray,
+    unique,
+    zeros,
+    int32,
+)
 from astropy.io import fits
-import struct
+from struct import unpack, calcsize
 
 
 """
@@ -70,7 +79,7 @@ def fds_loader(path2data: str, orders_num=40, values_per_block=2048):
         raise ValueError("Expetred size is larger, than expected")
 
     format_string = "<" + "i" * total_values
-    unpacked_data = struct.unpack(format_string, file_data[:expected_size])
+    unpacked_data = unpack(format_string, file_data[:expected_size])
 
     orders = [
         unpacked_data[i : i + values_per_block]
@@ -107,6 +116,19 @@ def make_txt_from_spectra(path2spectra: str, path2fds: str):
     return [intens_vals, ang_vals]
 
 
+# Thanks Nosonov Dmitry for solve for .100 file
+def read_100(path2file: str, headlen=10, fmtdat="h"):
+    bindat = open(path2file, "rb")
+    objname = bindat.read(headlen)
+    ord_num, ord_len = unpack("HH", bindat.read(4))
+    fmt_str = fmtdat * ord_len
+    bsize = calcsize(fmtdat)
+    data = zeros((ord_num, ord_len), int32)
+    for i in range(ord_num):
+        data[i] = unpack(fmt_str, bindat.read(bsize * ord_len))
+    return (objname, ord_num, ord_len), data
+
+
 if __name__ == "__main__":
     # data = tab_spectra("dech30.tab")
     # print(data)
@@ -118,4 +140,3 @@ if __name__ == "__main__":
         "/home/lambda/TSFitPy/input_files/observed_spectra/iras2020.txt"
     )
     glue_spectrum(spectrum, True)
-

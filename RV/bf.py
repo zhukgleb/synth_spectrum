@@ -1,22 +1,20 @@
-from matplotlib.style import context
 import numpy as np
 from scipy.optimize import nnls
 import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
-from matplotlib.colors import LogNorm
 from scipy.signal import find_peaks
 import scienceplots
 
 # Загружаем спектры
-template = np.loadtxt("/home/gamma/postagb.spec")  # [λ, I]
-# observed = np.loadtxt(
-#    "/home/gamma/TSFitPy/input_files/observed_spectra/iras2020.txt"
-# )  # [λ, I]
-observed = np.genfromtxt("collision.txt")
+template = np.loadtxt("/home/lambda/postagb.spec")  # [λ, I]
+observed = np.loadtxt(
+    "/home/lambda/TSFitPy/input_files/observed_spectra/iras2020.txt"
+)  # [λ, I]
+# observed = np.genfromtxt("collision.txt")
 
 
-wavelength_min, wavelength_max = 4700, 5000
+wavelength_min, wavelength_max = 4700, 5900
 mask = (observed[:, 0] >= wavelength_min) & (observed[:, 0] <= wavelength_max)
 observed = observed[mask]
 template = template[
@@ -29,8 +27,8 @@ for i in range(len(observed)):
         observed[:, 1][i] = 1
 
 c = 299792.458  # скорость света, км/с
-v_grid = np.linspace(-50, 50, 500)  # сетка скоростей, км/с
-segment_width = 10  # ширина сегмента спектра в пикселях
+v_grid = np.linspace(-20, 20, 100)  # сетка скоростей, км/с
+segment_width = 10
 
 # Интерполяция шаблона
 interp_template = np.interp(observed[:, 0], template[:, 0], template[:, 1])
@@ -125,8 +123,6 @@ with plt.style.context("science"):
     plt.grid()
     plt.show()
 
-from scipy.signal import find_peaks
-
 
 # Функция для поиска главных пиков с использованием расстояния в км/с
 def find_top_bf_peaks(bf_map, v_grid, top_n=3, min_distance_kms=10):
@@ -153,8 +149,8 @@ def find_top_bf_peaks(bf_map, v_grid, top_n=3, min_distance_kms=10):
 
 
 # Параметры
-top_n_peaks = 3
-min_distance_kms = 10  # Минимальное расстояние между пиками в км/с
+top_n_peaks = 2
+min_distance_kms = 2  # Минимальное расстояние между пиками в км/с
 
 # Находим главные уникальные пики в BF
 top_velocities, top_amplitudes = find_top_bf_peaks(
