@@ -11,9 +11,12 @@ from numpy import (
     unique,
     zeros,
     int32,
+    array,
+    where,
 )
 from astropy.io import fits
 from struct import unpack, calcsize
+from os import listdir
 
 
 """
@@ -109,13 +112,6 @@ def glue_spectrum(spectrum, save=True) -> ndarray:
     return spectrum[idx]
 
 
-def make_txt_from_spectra(path2spectra: str, path2fds: str):
-    intens_vals = dech_fits_loader(path2spectra)
-    ang_vals = fds_loader(path2fds)
-
-    return [intens_vals, ang_vals]
-
-
 # Thanks Nosonov Dmitry for solve for .100 file
 def read_100(path2file: str, headlen=10, fmtdat="h"):
     bindat = open(path2file, "rb")
@@ -126,17 +122,91 @@ def read_100(path2file: str, headlen=10, fmtdat="h"):
     data = zeros((ord_num, ord_len), int32)
     for i in range(ord_num):
         data[i] = unpack(fmt_str, bindat.read(bsize * ord_len))
-    return (objname, ord_num, ord_len), data
+    return objname, ord_num, ord_len, data
+
+
+def read_ccm(ccm_path, verbose=False):
+    fsz = 4  # размер float (4 байта)
+    with open(ccm_path, "rb") as ccm_file:
+        ord_num = unpack("i", ccm_file.read(fsz))[0]
+        if verbose:
+            print(f"{ccm_path} has {ord_num} orders")
+
+        data = {}
+        ordls = []
+
+        # Число точек в каждой кривой для каждого порядка
+        ordls = list(unpack(f'{"f" * ord_num}', ccm_file.read(fsz * ord_num)))
+
+        for ornum, orlen in enumerate(ordls):
+            if orlen:
+                data[ornum + 1] = []
+
+        maxo = int(max(ordls))
+        lastnum = ordls.index(maxo) + 1
+
+        for _ in range(maxo - 1):
+            for j in range(ord_num):
+                dot = unpack("ff", ccm_file.read(fsz * 2))
+                if dot[0] and len(data[j + 1]) != ordls[j]:
+                    data[j + 1].append(dot)
+
+        for j in range(lastnum):
+            dot = unpack("ff", ccm_file.read(fsz * 2))
+            if dot[0] and len(data[j + 1]) != ordls[j]:
+                data[j + 1].append(dot)
+
+    return data
+
+
+def make_txt_from_spectra(working_folder: str, verbose=True):
+    fnames_in_working_folder = listdir(working_folder)
+    spectra_name = ""
+    disp_name = ""
+    ccm_name = ""
+
+    for name in fnames_in_working_folder:
+        if name.endswith(".100") or name.endswith(".200"):
+            spectra_name = name
+        elif name.endswith(".fds"):
+            disp_name = name
+        elif name.endswith(".ccm"):
+            ccm_name = name
+        else:
+            print("Not found any spectral data")
+    print(spectra_name, disp_name, ccm_name)
+
+    o_name, o_nu, o_len, data = read_100(working_folder + spectra_name)
+    if verbose:
+        print(
+            f"Object name is: {o_name}, have a {o_nu} orders and {o_len} lenght of each"
+        )
+    pass
 
 
 if __name__ == "__main__":
-    # data = tab_spectra("dech30.tab")
+    import matplotlib.pyplot as plt
+
+    working_folder = "/home/lambda/stellar_chem/iras07430/"
+    make_txt_from_spectra(working_folder)
+    # o_name, o_num, o_len, data = read_100(working_folder + "/s693012s.100")
+    # print(o_name, o_num, o_len)
+    # fds = fds_loader(working_folder + "/s693011s.fds", o_num, o_len)
+    # plt.plot(fds[0], data[0])
+    # ccm = read_ccm(working_folder + "/s693012s.ccm")
+
+    # data = tab_spectra("/home/lambda/dech20t.tab")
     # print(data)
+    # plt.plot(data[:, 0], data[:, 1])
+    # plt.show()
+
     # data = fds_loader("data/fits/s693011s.fds")
     # data = make_txt_from_spectra("data/fits/e693006s.fits.200", "data/fits/s693011s.fds")
     # print(data)
     # tab_spectra("data/irasz_1.tab", save=True)
-    spectrum = genfromtxt(
-        "/home/lambda/TSFitPy/input_files/observed_spectra/iras2020.txt"
-    )
-    glue_spectrum(spectrum, True)
+    # spectrum = genfromtxt(
+    #    "/home/lambda/TSFitPy/input_files/observed_spectra/iras2020.txt"
+    # )
+    # new_data = glue_spectrum(data, True)
+    # plt.plot(new_data[:, 0], new_data[:, 1])
+    # plt.show()
