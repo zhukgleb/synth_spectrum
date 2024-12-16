@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from sklearn.linear_model import LinearRegression
 from tsfit_utils import get_model_data
+from typing import List, Union
 from tsfit_utils import clean_pd
 import scienceplots
 
@@ -142,6 +143,50 @@ def spectrum_converge(path2output: str):
     pass
 
 
+def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
+    metallicity_1 = data_1["Fe_H"].to_numpy(float)
+    error_1 = data_1["chi_squared"].to_numpy(float)
+
+    xy_point_density_1 = np.vstack([metallicity_1, error_1])
+    z_point_density_1 = gaussian_kde(xy_point_density_1)(xy_point_density_1)
+    idx_sort_1 = z_point_density_1.argsort()
+    x_plot_1, y_plot_1, z_plot_1 = (
+        metallicity_1[idx_sort_1],
+        error_1[idx_sort_1],
+        z_point_density_1[idx_sort_1],
+    )
+
+    metallicity_2 = data_2["Fe_H"].to_numpy(float)
+    error_2 = data_2["chi_squared"].to_numpy(float)
+
+    xy_point_density_2 = np.vstack([metallicity_2, error_2])
+    z_point_density_2 = gaussian_kde(xy_point_density_2)(xy_point_density_2)
+    idx_sort_2 = z_point_density_2.argsort()
+    x_plot_2, y_plot_2, z_plot_2 = (
+        metallicity_2[idx_sort_2],
+        error_2[idx_sort_2],
+        z_point_density_2[idx_sort_2],
+    )
+
+    with plt.style.context("science"):
+        _, ax = plt.subplots(nrows=2, ncols=1, figsize=(6, 8))
+        ax[0].set_title(r"Metallicity IRAS Z02229+6208")
+        ax[0].set_ylabel(r"$\chi^{2}$")
+        ax[0].set_xlabel(r"Metallicity, [Fe/H]")
+        ax[0].set_ylim((0, 100))
+        ax[1].set_title(r"Metallicity IRAS 07430+1115")
+        ax[1].set_ylabel(r"$\chi^{2}$")
+        ax[1].set_xlabel(r"Metallicity, [Fe/H]")
+        ax[1].set_ylim((0, 100))
+        density_1 = ax[0].scatter(x_plot_1, y_plot_1, c=z_plot_1)
+        density_2 = ax[1].scatter(x_plot_2, y_plot_2, c=z_plot_2)
+
+        plt.colorbar(density_2)
+        plt.colorbar(density_1)
+
+        plt.show()
+
+
 if __name__ == "__main__":
     # t_path = "data/chem/02229_teff.dat"
     #     teff_graph(t_path)
@@ -149,8 +194,13 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out = "Nov-05-2024-23-28-17_0.054290201188499476_LTE_Fe_1D"
-    pd_data = get_model_data(tsfit_output + out)
-    pd_data = clean_pd(pd_data, True, True)
-    plot_metall(pd_data)
+    out_1 = "2024-12-11-18-26-42_0.37586031193741987_LTE_Fe_1D"
+    out_2 = "2024-12-10-15-46-05_0.926899482273021_LTE_Fe_1D"
+    pd_data_1 = get_model_data(tsfit_output + out_1)
+    pd_data_2 = get_model_data(tsfit_output + out_2)
+
+    pd_data_1 = clean_pd(pd_data_1, True, True)
+    pd_data_2 = clean_pd(pd_data_2, True, True)
+
+    plot_metallVS(pd_data_1, pd_data_2)
     # plot_ion_balance(pd_data)

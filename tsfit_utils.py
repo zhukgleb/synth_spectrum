@@ -42,11 +42,11 @@ def clean_pd(
     output_data = pd.DataFrame()
     if remove_errors:
         output_data = pd_data.loc[
-            (pd_data["flag_error"] == "00000000") & (pd_data["chi_squared"] < 10)
+            (pd_data["flag_error"] == "00000000") & (pd_data["chi_squared"] < 100)
         ]
     if remove_warnings:
         output_data = pd_data.loc[
-            (pd_data["flag_warning"] == "00000000") & (pd_data["chi_squared"] < 10)
+            (pd_data["flag_warning"] == "00000000") & (pd_data["chi_squared"] < 100)
         ]
 
     return output_data

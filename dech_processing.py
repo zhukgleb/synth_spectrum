@@ -181,7 +181,8 @@ def make_txt_from_spectra(working_folder: str, verbose=True):
         print(
             f"Object name is: {o_name}, have a {o_nu} orders and {o_len} lenght of each"
         )
-    pass
+    fds_data = fds_loader(working_folder + disp_name, o_nu, o_len)
+    ccm_data = read_ccm(working_folder + ccm_name)
 
 
 if __name__ == "__main__":
