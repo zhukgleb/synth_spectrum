@@ -12,8 +12,6 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     wavelength = spectrum[:, 0]
     intens = spectrum[:, 1]
     left_wing, line_center, right_wing = linemask
-    # need to cut spectrum out of line
-    # 4840.8
     plus_rv = 0.0
     crop_mask = np.where(
         (wavelength >= left_wing + plus_rv) & (wavelength <= right_wing + plus_rv)
@@ -21,15 +19,6 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     wavelength = wavelength[crop_mask]
     intens = intens[crop_mask]
 
-    # make a synth curve
-
-    # x = np.arange(min(wavelength), max(wavelength), 0.001)
-    # y = inverted_gaussian(x, 0.5, 4840.8, 0.02)
-    # y += np.random.normal(loc=0.0, scale=1/100, size=len(x))
-    # plt.plot(x, y)
-    # popt, pcov = curve_fit(inverted_gaussian, x, y, p0=[np.abs(min(y)), line_center, (right_wing - left_wing) / 2.0])
-    # plt.plot(x, inverted_gaussian(x, popt[0], popt[1], popt[2]))
-    # plt.show()
     try:
         initial_guess = [
             np.abs(min(wavelength)),
@@ -50,12 +39,6 @@ def calculate_abs_params(spectrum: np.ndarray, linemask: list) -> list:
     except ValueError:
         print(f"{line_center} not ok (value)")
         return [-2, -2, -2], [-2, -2, -2]
-
-    # fit_x = np.arange(min(wavelength), max(wavelength), 0.001)
-    # fit_y = inverted_gaussian(fit_x, popt[0], popt[1], popt[2])
-    # plt.plot(wavelength, intens)
-    # plt.plot(fit_x, fit_y)
-    # plt.show()
 
     return popt, perr
 

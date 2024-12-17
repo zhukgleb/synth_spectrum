@@ -200,6 +200,7 @@ class SpectraViewer(QMainWindow):
             # Delete the selected line
             self.mask_data = np.delete(self.mask_data, closest_index, axis=0)
             print(f"Deleted line index: {closest_index}")
+            self.deletion_mode = False
 
             # Replot the mask
             self.replot_mask()

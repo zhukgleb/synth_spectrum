@@ -170,7 +170,9 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
 
     with plt.style.context("science"):
         _, ax = plt.subplots(nrows=2, ncols=1, figsize=(6, 8))
-        ax[0].set_title(r"Metallicity IRAS Z02229+6208")
+        # ax[0].set_title(r"Metallicity IRAS Z02229+6208")
+        ax[0].set_title(r"Metallicity IRAS 07430+1115")
+
         ax[0].set_ylabel(r"$\chi^{2}$")
         ax[0].set_xlabel(r"Metallicity, [Fe/H]")
         ax[0].set_ylim((0, 100))
@@ -194,13 +196,13 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_1 = "2024-12-11-18-26-42_0.37586031193741987_LTE_Fe_1D"
-    out_2 = "2024-12-10-15-46-05_0.926899482273021_LTE_Fe_1D"
+    out_1 = "2024-12-17-17-13-33_0.4917422664727745_LTE_Fe_1D"
+    out_2 = "2024-12-17-17-56-34_0.9332879773575903_LTE_Fe_1D"
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
 
-    pd_data_1 = clean_pd(pd_data_1, True, True)
-    pd_data_2 = clean_pd(pd_data_2, True, True)
+    pd_data_1 = clean_pd(pd_data_1, False, True)
+    pd_data_2 = clean_pd(pd_data_2, False, True)
 
     plot_metallVS(pd_data_1, pd_data_2)
-    # plot_ion_balance(pd_data)
+    plot_ion_balance(pd_data_2)

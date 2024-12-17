@@ -173,7 +173,7 @@ def make_txt_from_spectra(working_folder: str, verbose=True):
         elif name.endswith(".ccm"):
             ccm_name = name
         else:
-            print("Not found any spectral data")
+            pass
     print(spectra_name, disp_name, ccm_name)
 
     o_name, o_nu, o_len, data = read_100(working_folder + spectra_name)
@@ -182,14 +182,30 @@ def make_txt_from_spectra(working_folder: str, verbose=True):
             f"Object name is: {o_name}, have a {o_nu} orders and {o_len} lenght of each"
         )
     fds_data = fds_loader(working_folder + disp_name, o_nu, o_len)
-    ccm_data = read_ccm(working_folder + ccm_name)
+    data_conc = concatenate(data)
+    fds_conc = concatenate(fds_data)
+    resulted_data = column_stack((fds_conc, data_conc))
+    wavelenght = 0.0
+    clear_wave, clear_flux = [], []
+    for i in range(len(resulted_data)):
+        if resulted_data[:, 0][i] >= wavelenght:
+            wavelenght = resulted_data[:, 0][i]
+            clear_wave.append(resulted_data[:, 0][i])
+            clear_flux.append(resulted_data[:, 1][i])
+
+    # ccm_data = read_ccm(working_folder + ccm_name)
+    resulted_data = column_stack((clear_wave, clear_flux))
+    return resulted_data
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     working_folder = "/home/lambda/stellar_chem/iras07430/"
-    make_txt_from_spectra(working_folder)
+    a = make_txt_from_spectra(working_folder)
+    plt.plot(a[:, 0], a[:, 1])
+    plt.show()
+    savetxt("iras07_unnorm.txt", a)
     # o_name, o_num, o_len, data = read_100(working_folder + "/s693012s.100")
     # print(o_name, o_num, o_len)
     # fds = fds_loader(working_folder + "/s693011s.fds", o_num, o_len)
