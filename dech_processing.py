@@ -159,7 +159,7 @@ def read_ccm(ccm_path, verbose=False):
     return data
 
 
-def make_txt_from_spectra(working_folder: str, verbose=True):
+def make_txt_from_spectra(working_folder: str, verbose=True, cutbad=True):
     fnames_in_working_folder = listdir(working_folder)
     spectra_name = ""
     disp_name = ""
@@ -182,6 +182,13 @@ def make_txt_from_spectra(working_folder: str, verbose=True):
             f"Object name is: {o_name}, have a {o_nu} orders and {o_len} lenght of each"
         )
     fds_data = fds_loader(working_folder + disp_name, o_nu, o_len)
+    for i in range(len(data)):
+        for j in range(len(data[i])):
+            if j < int(len(data[i]) * 0.1):
+                data[i][j] = 0
+            if j > int(len(data[i]) * 0.9):
+                data[i][j] = 0
+
     data_conc = concatenate(data)
     fds_conc = concatenate(fds_data)
     resulted_data = column_stack((fds_conc, data_conc))
@@ -202,7 +209,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     working_folder = "/home/lambda/stellar_chem/iras07430/"
-    a = make_txt_from_spectra(working_folder)
+    a = make_txt_from_spectra(working_folder, cutbad=True)
     plt.plot(a[:, 0], a[:, 1])
     plt.show()
     savetxt("iras07_unnorm.txt", a)
