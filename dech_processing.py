@@ -182,12 +182,14 @@ def make_txt_from_spectra(working_folder: str, verbose=True, cutbad=True):
             f"Object name is: {o_name}, have a {o_nu} orders and {o_len} lenght of each"
         )
     fds_data = fds_loader(working_folder + disp_name, o_nu, o_len)
-    for i in range(len(data)):
-        for j in range(len(data[i])):
-            if j < int(len(data[i]) * 0.1):
-                data[i][j] = 0
-            if j > int(len(data[i]) * 0.9):
-                data[i][j] = 0
+
+    if cutbad:
+        for i in range(len(data)):
+            for j in range(len(data[i])):
+                if j < int(len(data[i]) * 0.1):
+                    data[i][j] = 0
+                if j > int(len(data[i]) * 0.9):
+                    data[i][j] = 0
 
     data_conc = concatenate(data)
     fds_conc = concatenate(fds_data)

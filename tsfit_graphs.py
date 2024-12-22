@@ -98,9 +98,10 @@ def plot_metall(data: pd.DataFrame):
 def plot_ion_balance(data: pd.DataFrame):
     metallicity = data["Fe_H"].to_numpy(float)
     ew = data["ew"].to_numpy(float)
-    ew = ew * 1000
+    ew = ew
     lamb = data["wave_center"].to_numpy(float)
     rel_ew = ew / lamb
+
     # Regression
     x = rel_ew.reshape((-1, 1))
     y = metallicity
@@ -119,7 +120,8 @@ def plot_ion_balance(data: pd.DataFrame):
         ax.set_title(r"Ionization balance of IRAS Z02229+6208")
         ax.set_ylabel(r"Metallicity, [Fe/H]")
         ax.set_xlabel(r"$EW / \lambda$")
-        ax.set_xlim((0, 100))
+        ax.set_ylim((-0.5, 0))
+        # ax.set_xscale("log")
         text = f"Slope: {slope:.4f}\nIntercept: {intercept:.2f}\nR squared: {r_sq:.2f}"
         plt.annotate(
             text,
@@ -157,10 +159,12 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
     )
 
     metallicity_2 = data_2["Fe_H"].to_numpy(float)
+    print(np.std(metallicity_2))
     error_2 = data_2["chi_squared"].to_numpy(float)
 
     xy_point_density_2 = np.vstack([metallicity_2, error_2])
     z_point_density_2 = gaussian_kde(xy_point_density_2)(xy_point_density_2)
+
     idx_sort_2 = z_point_density_2.argsort()
     x_plot_2, y_plot_2, z_plot_2 = (
         metallicity_2[idx_sort_2],
@@ -189,6 +193,22 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
         plt.show()
 
 
+def hist_estimation(df, bins):
+    metall = "Fe_H"
+    # b = df.iloc[:, 1:].values
+    counts, bins = np.histogram(pd.to_numeric(df[metall]), 30)
+    print(counts)
+    sigma = (max(bins) ** 0.5) / (
+        (bins[-1] - bins[-2]) * len(pd.to_numeric(df[metall]))
+    )
+    print(sigma)
+    plt.stairs(counts, bins)
+    # plt.hist(df[metall], bins, histtype="bar", alpha=0.5)
+    # plt.xlabel(metall)
+    # plt.ylabel("Count")
+    plt.show()
+
+
 if __name__ == "__main__":
     # t_path = "data/chem/02229_teff.dat"
     #     teff_graph(t_path)
@@ -196,13 +216,15 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_1 = "2024-12-17-17-13-33_0.4917422664727745_LTE_Fe_1D"
+    out_1 = "2024-12-20-23-50-07_0.8778284644655755_LTE_Fe_1D"
     out_2 = "2024-12-17-17-56-34_0.9332879773575903_LTE_Fe_1D"
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
 
-    pd_data_1 = clean_pd(pd_data_1, False, True)
-    pd_data_2 = clean_pd(pd_data_2, False, True)
+    # pd_data_1 = clean_pd(pd_data_1, True, True)
+    # pd_data_2 = clean_pd(pd_data_2, True, True)
+    print(len(pd_data_2))
 
     plot_metallVS(pd_data_1, pd_data_2)
     plot_ion_balance(pd_data_2)
+    # hist_estimation(pd_data_2, 30)

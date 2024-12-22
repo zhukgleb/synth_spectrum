@@ -8,10 +8,7 @@ import scienceplots
 
 # Загружаем спектры
 template = np.loadtxt("/home/lambda/postagb.spec")  # [λ, I]
-observed = np.loadtxt(
-    "/home/lambda/TSFitPy/input_files/observed_spectra/iras2020.txt"
-)  # [λ, I]
-# observed = np.genfromtxt("collision.txt")
+observed = np.loadtxt("/home/lambda/iras07430.txt")  # [λ, I]
 
 
 wavelength_min, wavelength_max = 4700, 5900
@@ -27,7 +24,7 @@ for i in range(len(observed)):
         observed[:, 1][i] = 1
 
 c = 299792.458  # скорость света, км/с
-v_grid = np.linspace(-20, 20, 100)  # сетка скоростей, км/с
+v_grid = np.linspace(-60, 60, 300)  # сетка скоростей, км/с
 segment_width = 10
 
 # Интерполяция шаблона
