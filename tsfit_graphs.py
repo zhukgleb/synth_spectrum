@@ -7,6 +7,16 @@ from tsfit_utils import get_model_data
 from typing import List, Union
 from tsfit_utils import clean_pd
 import scienceplots
+from scipy.stats import iqr
+from statsmodels.nonparametric.kernel_density import KDEMultivariate
+from scipy.stats import norm
+
+
+def weighted_kde(x, weights, x_grid, bandwidth=0.1):
+    kde_values = np.zeros_like(x_grid)
+    for xi, wi in zip(x, weights):
+        kde_values += wi * norm.pdf(x_grid, loc=xi, scale=bandwidth)
+    return kde_values / kde_values.sum()
 
 
 def teff_graph(path2result: str):
@@ -83,6 +93,21 @@ def plot_metall(data: pd.DataFrame):
         error[idx_sort],
         z_point_density[idx_sort],
     )
+
+    # Взвешенное среднее
+    weights = 1 / error
+    weighted_avg = np.sum(metallicity * weights) / np.sum(weights)
+
+    # Медиана
+    median = np.median(metallicity)
+
+    # Доверительный интервал (квантильный метод)
+    lower_bound = np.percentile(metallicity, 2.5)
+    upper_bound = np.percentile(metallicity, 97.5)
+
+    print(f"Взвешенное среднее: {weighted_avg:.3f}")
+    print(f"Медиана: {median:.3f}")
+    print(f"95% доверительный интервал: [{lower_bound:.3f}, {upper_bound:.3f}]")
 
     with plt.style.context("science"):
         _, ax = plt.subplots(figsize=(6, 4))
@@ -209,6 +234,84 @@ def hist_estimation(df, bins):
     plt.show()
 
 
+def plot_metall_error(data: pd.DataFrame):
+    metallicity = data["Fe_H"].to_numpy(float)
+    error = data["chi_squared"].to_numpy(float)
+    kde = gaussian_kde(metallicity, bw_method="scott")  # bw_method можно настроить
+    x_grid = np.linspace(metallicity.min() - 0.05, metallicity.max() + 0.05, 1000)
+    pdf = kde(x_grid)  # Плотность вероятности
+
+    # Центральное значение: мода (точка максимума KDE)
+    mode = x_grid[np.argmax(pdf)]
+
+    # Доверительный интервал: 2.5% и 97.5% (интегрируем PDF)
+    cdf = np.cumsum(pdf) / np.sum(pdf)  # Нормированная кумулятивная функция
+    lower_bound = x_grid[np.searchsorted(cdf, 0.025)]
+    upper_bound = x_grid[np.searchsorted(cdf, 0.975)]
+
+    # Визуализация
+    plt.figure(figsize=(8, 5))
+    plt.plot(x_grid, pdf, label="KDE (оценка плотности)", color="blue")
+    plt.axvline(mode, color="red", linestyle="--", label=f"Мода: {mode:.3f}")
+    plt.axvline(
+        lower_bound, color="green", linestyle="--", label=f"2.5%: {lower_bound:.3f}"
+    )
+    plt.axvline(
+        upper_bound, color="green", linestyle="--", label=f"97.5%: {upper_bound:.3f}"
+    )
+    plt.title("Ядровая оценка плотности (KDE)")
+    plt.xlabel("Металличность")
+    plt.ylabel("Плотность вероятности")
+    plt.legend()
+    print(f"Мода металличности: {mode:.3f}")
+    print(f"95% доверительный интервал: [{lower_bound:.3f}, {upper_bound:.3f}]")
+    plt.show()
+
+
+def plot_metall_KDE(data: pd.DataFrame):
+    metallicity = data["Fe_H"].to_numpy(float)
+    chi_squared = data["chi_squared"].to_numpy(float)
+    weights = 1 / chi_squared
+    weights /= weights.sum()
+
+    x_grid = np.linspace(metallicity.min() - 0.05, metallicity.max() + 0.05, 1000)
+    pdf = weighted_kde(metallicity, weights, x_grid, bandwidth=0.02)
+
+    mode = x_grid[np.argmax(pdf)]
+
+    cdf = np.cumsum(pdf) / np.sum(pdf)
+    lower_bound = x_grid[np.searchsorted(cdf, 0.025)]
+    upper_bound = x_grid[np.searchsorted(cdf, 0.975)]
+    with plt.style.context("science"):
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_grid, pdf, label="KDE", color="blue")
+        plt.axvline(mode, color="red", linestyle="--", label=f"Mode: {mode:.3f}")
+        plt.axvline(
+            lower_bound, color="green", linestyle="--", label=f"2.5%: {lower_bound:.3f}"
+        )
+        plt.axvline(
+            upper_bound,
+            color="green",
+            linestyle="--",
+            label=f"97.5%: {upper_bound:.3f}",
+        )
+        plt.title("KDE with weight")
+        plt.xlabel("Metallicity")
+        plt.ylabel("PDF")
+        plt.legend()
+        plt.show()
+
+        print(f"Мода металличности: {mode:.3f}")
+        print(f"95% доверительный интервал: [{lower_bound:.3f}, {upper_bound:.3f}]")
+        # Доверительный интервал 68%
+        lower_bound_68 = x_grid[np.searchsorted(cdf, 0.16)]  # 16-й процентиль
+        upper_bound_68 = x_grid[np.searchsorted(cdf, 0.84)]  # 84-й процентиль
+
+        # Оценка средней ошибки
+        error = (upper_bound_68 - lower_bound_68) / 2
+        print(f"Средняя ошибка металличности (1σ): {error:.3f}")
+
+
 if __name__ == "__main__":
     # t_path = "data/chem/02229_teff.dat"
     #     teff_graph(t_path)
@@ -216,15 +319,15 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_1 = "2024-12-20-23-50-07_0.8778284644655755_LTE_Fe_1D"
+    out_1 = "2024-12-17-21-33-02_0.23605227638685589_LTE_Fe_1D"
     out_2 = "2024-12-17-17-56-34_0.9332879773575903_LTE_Fe_1D"
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
 
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
-    print(len(pd_data_2))
 
     plot_metallVS(pd_data_1, pd_data_2)
-    plot_ion_balance(pd_data_2)
+    # plot_metall_KDE(pd_data_2)
+    # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
