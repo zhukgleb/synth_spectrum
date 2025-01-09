@@ -7,8 +7,8 @@ from scipy.signal import find_peaks
 import scienceplots
 
 # Загружаем спектры
-template = np.loadtxt("/home/lambda/postagb.spec")  # [λ, I]
-observed = np.loadtxt("/home/lambda/iras07430.txt")  # [λ, I]
+template = np.loadtxt("/Users/delta/synth_spectrum/data/iras07430.txt")  # [λ, I]
+observed = np.loadtxt("/Users/delta/synth_spectrum/data/iras2020.txt")  # [λ, I]
 
 
 wavelength_min, wavelength_max = 4700, 5900
@@ -24,8 +24,8 @@ for i in range(len(observed)):
         observed[:, 1][i] = 1
 
 c = 299792.458  # скорость света, км/с
-v_grid = np.linspace(-60, 60, 300)  # сетка скоростей, км/с
-segment_width = 10
+v_grid = np.linspace(-20, 20, 300)  # сетка скоростей, км/с
+segment_width = 8
 
 # Интерполяция шаблона
 interp_template = np.interp(observed[:, 0], template[:, 0], template[:, 1])
@@ -69,7 +69,7 @@ segment_indices_list = [
 # Параллельный расчёт BF с обработкой ошибок
 bf_map = np.zeros((len(v_grid), len(observed[:, 0])))
 
-with ThreadPoolExecutor(max_workers=24) as executor:
+with ThreadPoolExecutor(max_workers=50) as executor:
     results = list(
         tqdm(
             executor.map(compute_bf_for_segment, segment_indices_list),
@@ -92,15 +92,15 @@ for idx, bf_segment in enumerate(results):
 
 # Визуализация BF-карты с логарифмической шкалой
 #
-with plt.style.context("science"):
-    plt.figure(figsize=(12, 6))
-    extent = [observed[:, 0].min(), observed[:, 0].max(), v_grid.min(), v_grid.max()]
-    plt.imshow(bf_map, aspect="auto", origin="lower", extent=extent, cmap="plasma")
-    plt.colorbar(label="BF Amplitude")
-    plt.xlabel("Wavelength (Å)")
-    plt.ylabel("Radial Velocity (km/s)")
-    plt.title("Broadening Function Map")
-    plt.show()
+
+plt.figure(figsize=(12, 6))
+extent = [observed[:, 0].min(), observed[:, 0].max(), v_grid.min(), v_grid.max()]
+plt.imshow(bf_map, aspect="auto", origin="lower", extent=extent, cmap="plasma")
+plt.colorbar(label="BF Amplitude")
+plt.xlabel("Wavelength (Å)")
+plt.ylabel("Radial Velocity (km/s)")
+plt.title("Broadening Function Map")
+plt.show()
 
 
 broadening_matrix = np.zeros((len(v_grid), len(observed)))

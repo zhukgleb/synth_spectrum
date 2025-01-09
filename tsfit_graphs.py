@@ -311,6 +311,17 @@ def plot_metall_KDE(data: pd.DataFrame):
         error = (upper_bound_68 - lower_bound_68) / 2
         print(f"Средняя ошибка металличности (1σ): {error:.3f}")
 
+def median_analysis(pd_data: pd.DataFrame):
+    column_name = "Teff"
+    if np.argwhere(pd_data.columns.values == column_name) != -1:
+        column_data = pd_data[column_name].values
+        column_data = [float(column_data[x]) for x in range(len(column_data))]
+        column_data_median = np.median(column_data)
+        print(f"Median vmic: {column_data_median}")
+        bootstrapped_medians = [np.median(np.random.choice(column_data, size=len(column_data), replace=True)) for _ in range(10**6)]
+        median_variance = np.var(bootstrapped_medians)
+        print(f"Дисперсия медианы: {median_variance}")
+
 
 if __name__ == "__main__":
     # t_path = "data/chem/02229_teff.dat"
@@ -320,14 +331,16 @@ if __name__ == "__main__":
     from config_loader import tsfit_output
 
     out_1 = "2024-12-17-21-33-02_0.23605227638685589_LTE_Fe_1D"
-    out_2 = "2024-12-17-17-56-34_0.9332879773575903_LTE_Fe_1D"
+    out_2 = "2024-12-25-21-12-26_0.43575106023671906_NLTE_Fe_1D"
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
 
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
 
-    plot_metallVS(pd_data_1, pd_data_2)
+    # plot_metallVS(pd_data_1, pd_data_2)
     # plot_metall_KDE(pd_data_2)
+    median_analysis(pd_data_2)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
+
