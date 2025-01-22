@@ -81,8 +81,8 @@ def plot_scatter_df_results(
     plt.close()
 
 
-def plot_metall(data: pd.DataFrame):
-    metallicity = data["Fe_H"].to_numpy(float)
+def plot_metall(data: pd.DataFrame, ratio: str = "Fe_H"):
+    metallicity = data[ratio].to_numpy(float)
     error = data["chi_squared"].to_numpy(float)
 
     xy_point_density = np.vstack([metallicity, error])
@@ -94,14 +94,11 @@ def plot_metall(data: pd.DataFrame):
         z_point_density[idx_sort],
     )
 
-    # Взвешенное среднее
     weights = 1 / error
     weighted_avg = np.sum(metallicity * weights) / np.sum(weights)
 
-    # Медиана
     median = np.median(metallicity)
 
-    # Доверительный интервал (квантильный метод)
     lower_bound = np.percentile(metallicity, 2.5)
     upper_bound = np.percentile(metallicity, 97.5)
 
@@ -166,12 +163,8 @@ def plot_ion_balance(data: pd.DataFrame):
         plt.show()
 
 
-def spectrum_converge(path2output: str):
-    pass
-
-
-def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
-    metallicity_1 = data_1["Fe_H"].to_numpy(float)
+def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame, ratio: str = "Fe_H"):
+    metallicity_1 = data_1[ratio].to_numpy(float)
     error_1 = data_1["chi_squared"].to_numpy(float)
 
     xy_point_density_1 = np.vstack([metallicity_1, error_1])
@@ -183,7 +176,7 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
         z_point_density_1[idx_sort_1],
     )
 
-    metallicity_2 = data_2["Fe_H"].to_numpy(float)
+    metallicity_2 = data_2[ratio].to_numpy(float)
     print(np.std(metallicity_2))
     error_2 = data_2["chi_squared"].to_numpy(float)
 
@@ -198,24 +191,25 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame):
     )
 
     with plt.style.context("science"):
-        _, ax = plt.subplots(nrows=2, ncols=1, figsize=(6, 8))
+        _, ax = plt.subplots(nrows=2, ncols=1, figsize=(6.5, 9))
         # ax[0].set_title(r"Metallicity IRAS Z02229+6208")
-        ax[0].set_title(r"Metallicity IRAS 07430+1115")
+        ax[0].set_title(r"Metallicity IRAS 07430+1115, T=6000, log~g=1")
 
         ax[0].set_ylabel(r"$\chi^{2}$")
         ax[0].set_xlabel(r"Metallicity, [Fe/H]")
         ax[0].set_ylim((0, 100))
-        ax[1].set_title(r"Metallicity IRAS 07430+1115")
+        ax[1].set_title(r"Metallicity IRAS 07430+1115, T=4900, log~g=0.5")
         ax[1].set_ylabel(r"$\chi^{2}$")
         ax[1].set_xlabel(r"Metallicity, [Fe/H]")
         ax[1].set_ylim((0, 100))
+        ax[1].set_xlim((-0.8, 0))
         density_1 = ax[0].scatter(x_plot_1, y_plot_1, c=z_plot_1)
         density_2 = ax[1].scatter(x_plot_2, y_plot_2, c=z_plot_2)
 
         plt.colorbar(density_2)
         plt.colorbar(density_1)
-
-        plt.show()
+        plt.savefig("ReddyVSZhuck.pdf", dpi=600)
+        # plt.show()
 
 
 def hist_estimation(df, bins):
@@ -241,10 +235,8 @@ def plot_metall_error(data: pd.DataFrame):
     x_grid = np.linspace(metallicity.min() - 0.05, metallicity.max() + 0.05, 1000)
     pdf = kde(x_grid)  # Плотность вероятности
 
-    # Центральное значение: мода (точка максимума KDE)
     mode = x_grid[np.argmax(pdf)]
 
-    # Доверительный интервал: 2.5% и 97.5% (интегрируем PDF)
     cdf = np.cumsum(pdf) / np.sum(pdf)  # Нормированная кумулятивная функция
     lower_bound = x_grid[np.searchsorted(cdf, 0.025)]
     upper_bound = x_grid[np.searchsorted(cdf, 0.975)]
@@ -268,8 +260,8 @@ def plot_metall_error(data: pd.DataFrame):
     plt.show()
 
 
-def plot_metall_KDE(data: pd.DataFrame):
-    metallicity = data["Fe_H"].to_numpy(float)
+def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H"):
+    metallicity = data[ratio].to_numpy(float)
     chi_squared = data["chi_squared"].to_numpy(float)
     weights = 1 / chi_squared
     weights /= weights.sum()
@@ -303,13 +295,13 @@ def plot_metall_KDE(data: pd.DataFrame):
 
         print(f"Мода металличности: {mode:.3f}")
         print(f"95% доверительный интервал: [{lower_bound:.3f}, {upper_bound:.3f}]")
-        # Доверительный интервал 68%
+        # 68 % interval
         lower_bound_68 = x_grid[np.searchsorted(cdf, 0.16)]  # 16-й процентиль
         upper_bound_68 = x_grid[np.searchsorted(cdf, 0.84)]  # 84-й процентиль
 
-        # Оценка средней ошибки
         error = (upper_bound_68 - lower_bound_68) / 2
         print(f"Средняя ошибка металличности (1σ): {error:.3f}")
+
 
 def median_analysis(pd_data: pd.DataFrame):
     column_name = "Teff"
@@ -317,29 +309,38 @@ def median_analysis(pd_data: pd.DataFrame):
         column_data = pd_data[column_name].values
         column_data = [float(column_data[x]) for x in range(len(column_data))]
         column_data_median = np.median(column_data)
+        with plt.style.context("science"):
+            plt.title(f"{column_name} variation")
+            plt.scatter([x for x in range(len(column_data))], column_data)
+            plt.show()
+
         print(f"Median vmic: {column_data_median}")
-        bootstrapped_medians = [np.median(np.random.choice(column_data, size=len(column_data), replace=True)) for _ in range(10**6)]
+        bootstrapped_medians = [
+            np.median(
+                np.random.choice(column_data, size=len(column_data), replace=True)
+            )
+            for _ in range(10**6)
+        ]
         median_variance = np.var(bootstrapped_medians)
         print(f"Дисперсия медианы: {median_variance}")
 
 
 if __name__ == "__main__":
-    # t_path = "data/chem/02229_teff.dat"
-    #     teff_graph(t_path)
-    #
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_1 = "2024-12-17-21-33-02_0.23605227638685589_LTE_Fe_1D"
-    out_2 = "2024-12-25-21-12-26_0.43575106023671906_NLTE_Fe_1D"
+    out_1 = "2025-01-14-19-47-36_0.4998416673491809_LTE_Fe_1D"
+    out_2 = "2025-01-21-18-45-38_0.869357665479587_LTE_Fe_1D"
+    # out_2 = "2025-01-14-09-23-05_0.40200984952743124_LTE_Y_1D"
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
 
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
-
-    # plot_metallVS(pd_data_1, pd_data_2)
-    # plot_metall_KDE(pd_data_2)
+    r = "Fe_H"
+    # plot_metallVS(pd_data_1, pd_data_2, r)
+    # plot_metall(pd_data_2)
+    # plot_metall_KDE(pd_data_2, r)
     median_analysis(pd_data_2)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
