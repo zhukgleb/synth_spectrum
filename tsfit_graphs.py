@@ -208,8 +208,8 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame, ratio: str = "Fe_H
 
         plt.colorbar(density_2)
         plt.colorbar(density_1)
-        plt.savefig("ReddyVSZhuck.pdf", dpi=600)
-        # plt.show()
+        # plt.savefig("ReddyVSZhuck.pdf", dpi=600)
+        plt.show()
 
 
 def hist_estimation(df, bins):
@@ -329,9 +329,9 @@ if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_1 = "2025-01-14-19-47-36_0.4998416673491809_LTE_Fe_1D"
-    out_2 = "2025-01-21-18-45-38_0.869357665479587_LTE_Fe_1D"
-    # out_2 = "2025-01-14-09-23-05_0.40200984952743124_LTE_Y_1D"
+    out_2 = "2025-01-14-19-47-36_0.4998416673491809_LTE_Fe_1D"
+    out_1 = "2025-01-23-17-28-54_0.1507412007318395_LTE_Fe_1D"
+
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
 
@@ -339,9 +339,9 @@ if __name__ == "__main__":
     # pd_data_2 = clean_pd(pd_data_2, True, True)
     r = "Fe_H"
     # plot_metallVS(pd_data_1, pd_data_2, r)
-    # plot_metall(pd_data_2)
-    # plot_metall_KDE(pd_data_2, r)
-    median_analysis(pd_data_2)
+    plot_metall_KDE(pd_data_2, r)
+    # plot_metall(out_2, r)
+    # median_analysis(pd_data_2)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
 
