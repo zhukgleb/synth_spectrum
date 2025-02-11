@@ -202,7 +202,6 @@ def plot_metallVS(data_1: pd.DataFrame, data_2: pd.DataFrame, ratio: str = "Fe_H
         ax[1].set_ylabel(r"$\chi^{2}$")
         ax[1].set_xlabel(r"Metallicity, [Fe/H]")
         ax[1].set_ylim((0, 100))
-        ax[1].set_xlim((-0.8, 0))
         density_1 = ax[0].scatter(x_plot_1, y_plot_1, c=z_plot_1)
         density_2 = ax[1].scatter(x_plot_2, y_plot_2, c=z_plot_2)
 
@@ -274,7 +273,7 @@ def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H"):
     cdf = np.cumsum(pdf) / np.sum(pdf)
     lower_bound = x_grid[np.searchsorted(cdf, 0.025)]
     upper_bound = x_grid[np.searchsorted(cdf, 0.975)]
-    with plt.style.context("science"):
+    with plt.style.context("ggplot"):
         plt.figure(figsize=(8, 6))
         plt.plot(x_grid, pdf, label="KDE", color="blue")
         plt.axvline(mode, color="red", linestyle="--", label=f"Mode: {mode:.3f}")
@@ -325,23 +324,52 @@ def median_analysis(pd_data: pd.DataFrame):
         print(f"Дисперсия медианы: {median_variance}")
 
 
+def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
+    velocity = pd_data["Doppler_Shift_add_to_RV"].values
+    velocity = [float(velocity[x]) for x in range(len(velocity))]
+    metallicty = pd_data[ratio].values
+    metallicty = [float(metallicty[x]) for x in range(len(metallicty))]
+    chi = pd_data["chi_squared"].to_numpy(float)
+
+    with plt.style.context("science"):
+        _, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 8))
+        ax.set_title(r"Velocity dispersion of FeI on IRAS 07430+1115")
+        ax.set_ylabel(r"$\chi^{2}$")
+        ax.set_xlabel(r"Metallicity, [Fe/H]")
+        ax.set_ylim((0, 20))
+
+        density = ax.scatter(metallicty, chi, c=velocity)
+        plt.colorbar(density, label="Velocity dispersion")
+        # plt.savefig("ReddyVSZhuck.pdf", dpi=600)
+        plt.show()
+
+    pass
+
+
+def line_combiner(pd_data: pd.DataFrame, linelist: np.ndarray):
+    pass
+
+
 if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_2 = "2025-01-14-19-47-36_0.4998416673491809_LTE_Fe_1D"
-    out_1 = "2025-01-23-17-28-54_0.1507412007318395_LTE_Fe_1D"
+    out_1 = "2025-02-09-19-31-13_0.9215823772306986_LTE_Fe_1D"
+    out_2 = "2025-02-10-11-48-42_0.616663993169006_LTE_Fe_1D"
 
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
+    velocity_dispersion(pd_data_2)
 
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
-    r = "Fe_H"
+
+    # r = "Fe_H"
     # plot_metallVS(pd_data_1, pd_data_2, r)
-    plot_metall_KDE(pd_data_2, r)
+    # plot_metall_KDE(pd_data_2, r)
+    # plot_metall_KDE(pd_data_1, r)
+
     # plot_metall(out_2, r)
     # median_analysis(pd_data_2)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
-
