@@ -336,38 +336,66 @@ def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
         ax.set_title(r"Velocity dispersion of FeI on IRAS 07430+1115")
         ax.set_ylabel(r"$\chi^{2}$")
         ax.set_xlabel(r"Metallicity, [Fe/H]")
-        ax.set_ylim((0, 20))
+        ax.set_ylim((0, 100))
 
         density = ax.scatter(metallicty, chi, c=velocity)
         plt.colorbar(density, label="Velocity dispersion")
         # plt.savefig("ReddyVSZhuck.pdf", dpi=600)
         plt.show()
 
-    pass
+
+def wave2velocity(wavelength: float, rest_wavelength: float) -> float:
+    z = (wavelength - rest_wavelength) / wavelength
+    c = 2.998e8  # m/s
+    return float(z * c)
 
 
-def line_combiner(pd_data: pd.DataFrame, linelist: np.ndarray):
-    pass
+def line_combiner(spectrum: np.ndarray, linelist: np.ndarray):
+    lines_cut = []
+    for line in linelist:
+        line_data = np.where((spectrum[:, 0] >= line[1]) & (spectrum[:, 0] <= line[2]))
+        lines_cut.append(spectrum[line_data])
+
+    velocity_cut = []
+    number_of_line = 0
+    for line in lines_cut:
+        line_velocity = []
+        for element in line:
+            line_velocity.append(wave2velocity(element[0], linelist[number_of_line][0]))
+        number_of_line += 1
+        print(number_of_line)
+        velocity_cut.append(line_velocity)
+
+    for i in range(len(velocity_cut)):
+        plt.plot(velocity_cut[i], lines_cut[i][:, 1])
+        # plt.plot(np.arange(0, len(lines_cut[i][:, 1])), lines_cut[i][:, 1])
+
+    plt.show()
 
 
 if __name__ == "__main__":
     from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
-    out_1 = "2025-02-09-19-31-13_0.9215823772306986_LTE_Fe_1D"
-    out_2 = "2025-02-10-11-48-42_0.616663993169006_LTE_Fe_1D"
+    #    out_1 = "2025-02-11-17-09-42_0.04291624334452615_LTE_Fe_1D"
+    #    out_2 = "2025-02-10-11-48-42_0.616663993169006_LTE_Fe_1D"
+    out_1 = "2025-02-13-18-46-14_0.06809349057962932_LTE_C_1D"
+    out_2 = "2025-02-13-17-54-28_0.1601257501795319_LTE_C_1D"
 
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
-    velocity_dispersion(pd_data_2)
+    c_linemask = np.genfromtxt("c_reddy.txt")
+    spectrum = np.genfromtxt("iras07430.txt")
+    # line_combiner(spectrum, c_linemask)
 
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
 
-    # r = "Fe_H"
-    # plot_metallVS(pd_data_1, pd_data_2, r)
+    r = "C_Fe"
+    # velocity_dispersion(pd_data_2, r)
+    plot_metallVS(pd_data_1, pd_data_2, r)
+    plot_metall_KDE(pd_data_1, r)
     # plot_metall_KDE(pd_data_2, r)
-    # plot_metall_KDE(pd_data_1, r)
 
     # plot_metall(out_2, r)
     # median_analysis(pd_data_2)
