@@ -2,7 +2,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 
-def increese_resolution(spectrum_data, coeff, method: str = "quad"):
+def increese_resolution(spectrum_data: list, coeff: int, method: str = "quad"):
     AA_original = spectrum_data[0]
     flux_original = spectrum_data[1]
     AA = np.linspace(np.min(AA_original), np.max(AA_original), len(AA_original) * coeff)
