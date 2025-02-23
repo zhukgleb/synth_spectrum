@@ -136,7 +136,7 @@ def read_ccm(ccm_path, verbose=False):
         ordls = []
 
         # Число точек в каждой кривой для каждого порядка
-        ordls = list(unpack(f'{"f" * ord_num}', ccm_file.read(fsz * ord_num)))
+        ordls = list(unpack(f"{'f' * ord_num}", ccm_file.read(fsz * ord_num)))
 
         for ornum, orlen in enumerate(ordls):
             if orlen:
