@@ -7,9 +7,8 @@ from tsfit_utils import get_model_data
 from typing import List, Union
 from tsfit_utils import clean_pd
 import scienceplots
-from scipy.stats import iqr
-from statsmodels.nonparametric.kernel_density import KDEMultivariate
 from scipy.stats import norm
+from scipy.optimize import curve_fit
 
 
 def weighted_kde(x, weights, x_grid, bandwidth=0.1):
@@ -259,14 +258,15 @@ def plot_metall_error(data: pd.DataFrame):
     plt.show()
 
 
-def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H"):
+def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H", bandwidth=0.05):
     metallicity = data[ratio].to_numpy(float)
+    print(f"Mean: {np.mean(metallicity)}")
     chi_squared = data["chi_squared"].to_numpy(float)
     weights = 1 / chi_squared
     weights /= weights.sum()
 
     x_grid = np.linspace(metallicity.min() - 0.05, metallicity.max() + 0.05, 1000)
-    pdf = weighted_kde(metallicity, weights, x_grid, bandwidth=0.02)
+    pdf = weighted_kde(metallicity, weights, x_grid, bandwidth=bandwidth)
 
     mode = x_grid[np.argmax(pdf)]
 
@@ -324,6 +324,63 @@ def median_analysis(pd_data: pd.DataFrame):
         print(f"Дисперсия медианы: {median_variance}")
 
 
+def gaussian(Z, A, mu, sigma):
+    return A * np.exp(-((Z - mu) ** 2) / (2 * sigma**2))
+
+
+def gauss_metall(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
+    feh_values = pd_data[ratio].to_numpy(float)
+    chi2_values = pd_data["chi_squared"].to_numpy(float)
+    sorted_idx = np.argsort(feh_values)
+    feh_values = feh_values[sorted_idx]
+    chi2_values = chi2_values[sorted_idx]
+    # Найдём минимум Chi^2
+    min_index = np.argmin(chi2_values)
+    feh_best = feh_values[min_index]
+    chi2_min = chi2_values[min_index]
+
+    # Оценим погрешность по критерию Delta Chi^2 = 1
+    threshold = chi2_min + 1
+
+    # Определим границы неопределенности
+    feh_lower = np.max(
+        feh_values[feh_values < feh_best][
+            chi2_values[feh_values < feh_best] <= threshold
+        ],
+        initial=feh_best,
+    )
+    feh_upper = np.min(
+        feh_values[feh_values > feh_best][
+            chi2_values[feh_values > feh_best] <= threshold
+        ],
+        initial=feh_best,
+    )
+
+    # Вывод результатов
+    print(f"Оптимальное значение [Fe/H]: {feh_best:.3f}")
+    print(
+        f"Неопределенность: -{feh_best - feh_lower:.3f} / +{feh_upper - feh_best:.3f}"
+    )
+
+    # Визуализация
+    plt.plot(feh_values, chi2_values, "o-", label="Chi^2")
+    plt.axhline(threshold, linestyle="--", color="gray", label="$\chi^2_{min} + 1$")
+    plt.axvline(
+        feh_best, linestyle="--", color="red", label=f"Best [Fe/H] = {feh_best:.3f}"
+    )
+    plt.fill_betweenx(
+        [min(chi2_values), max(chi2_values)],
+        feh_lower,
+        feh_upper,
+        color="gray",
+        alpha=0.3,
+    )
+    plt.xlabel("[Fe/H]")
+    plt.ylabel("$\chi^2$")
+    plt.legend()
+    plt.show()
+
+
 def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
     velocity = pd_data["Doppler_Shift_add_to_RV"].values
     velocity = [float(velocity[x]) for x in range(len(velocity))]
@@ -336,12 +393,14 @@ def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
         ax.set_title(r"Velocity dispersion of FeI on IRAS 07430+1115")
         ax.set_ylabel(r"$\chi^{2}$")
         ax.set_xlabel(r"Metallicity, [Fe/H]")
-        ax.set_ylim((0, 100))
+        ax.set_ylim((0, 20))
 
         density = ax.scatter(metallicty, chi, c=velocity)
         plt.colorbar(density, label="Velocity dispersion")
         # plt.savefig("ReddyVSZhuck.pdf", dpi=600)
         plt.show()
+
+    pass
 
 
 def wave2velocity(wavelength: float, rest_wavelength: float) -> float:
@@ -379,25 +438,23 @@ if __name__ == "__main__":
 
     #    out_1 = "2025-02-11-17-09-42_0.04291624334452615_LTE_Fe_1D"
     #    out_2 = "2025-02-10-11-48-42_0.616663993169006_LTE_Fe_1D"
-    out_1 = "2025-02-13-18-46-14_0.06809349057962932_LTE_C_1D"
-    out_2 = "2025-02-13-17-54-28_0.1601257501795319_LTE_C_1D"
+    #
+    out_1 = "2025-02-22-16-06-06_0.8738030062131275_LTE_Fe_1D"
+    out_2 = "2025-02-22-14-19-48_0.23837068316608268_LTE_Fe_1D"
 
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
-    c_linemask = np.genfromtxt("c_reddy.txt")
-    spectrum = np.genfromtxt("iras07430.txt")
     # line_combiner(spectrum, c_linemask)
 
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
 
-    r = "C_Fe"
+    r = "Fe_H"
     # velocity_dispersion(pd_data_2, r)
-    plot_metallVS(pd_data_1, pd_data_2, r)
+    # plot_metallVS(pd_data_1, pd_data_2, r)
     plot_metall_KDE(pd_data_1, r)
-    # plot_metall_KDE(pd_data_2, r)
+    plot_metall_KDE(pd_data_2, r)
 
-    # plot_metall(out_2, r)
     # median_analysis(pd_data_2)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
