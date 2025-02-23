@@ -6,14 +6,28 @@ localtsfit = True
 def extract_linemask(path2linemask:str) -> np.ndarray:
     return np.genfromtxt(path2linemask)
 
+# def clean_after_run(path2reuslts: str, path2linemask: str):
+#     linemask_data = extract_linemask(path2linemask)
+#     result_data = get_model_data(path2reuslts)
+#     centerline_pd = result_data["wave_center"].astype(float)
+    
+#     cenerline_linemask = linemask_data[:, 0]
+#     idx = np.where(cenerline_linemask == centerline_pd)
+#     print(cenerline_linemask, centerline_pd)
+#     print(idx)
+    
 
-# 
-def clean_after_run(path2reuslts: str, path2linemask: str):
+def clean_after_run(path2reuslts: str, path2linemask: str, truncate_warnings: bool = False):
     linemask_data = extract_linemask(path2linemask)
     result_data = get_model_data(path2reuslts)
-    centerline_pd = result_data["wave_start"].values
-    cenerline_linemask = linemask_data[:, 0]
+    result_data = clean_pd(result_data, truncate_warnings, True)
+    centerline_pd = result_data["wave_center"].astype(float)
+    startline_pd = result_data["wave_start"].astype(float)
+    endline_pd = result_data["wave_end"].astype(float)
 
+    clean_linelist = np.column_stack((centerline_pd, startline_pd, endline_pd))
+    np.savetxt(path2linemask + "_clean", clean_linelist)
+    
     
 
 
