@@ -40,12 +40,16 @@ def clean_after_run(path2reuslts: str, path2linemask: str, truncate_warnings: bo
 def extract_element(path2vald: str, element_name: str) -> np.ndarray:
     data = np.genfromtxt(path2vald, delimiter=",", dtype=str, skip_header=3, invalid_raise=False)
     idx = np.where(data[:, 0] == element_name)
-    return data[:, 1]
+    return data[:, 1][idx]
 
+def make_linemask(line_centers: np.ndarray, line_eps=1) -> np.ndarray:
+    line_centers = line_centers.astype(float)
+    return np.column_stack((line_centers, line_centers-1, line_centers+1))
 
 if __name__ == "__main__":
     from config_loader import tsfit_output
     # path2output = "2025-02-22-16-06-06_0.8738030062131275_LTE_Fe_1D"
     # clean_after_run(tsfit_output + path2output, "/Users/beta/synth_spectrum/linemask_files/Fe/fe1_gleb2.txt")
-    element_data = extract_element("ZhuklevichGleb.006110", "N 1")
-    print(element_data)
+    element_data = extract_element("ZhuklevichGleb.006110", "'Mg 1'")
+    print(len(element_data))
+    # np.savetxt("mg_linemask", make_linemask(element_data))
