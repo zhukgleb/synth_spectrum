@@ -265,7 +265,7 @@ def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H", bandwidth=0.05):
     weights = 1 / chi_squared
     weights /= weights.sum()
 
-    x_grid = np.linspace(metallicity.min() - 0.05, metallicity.max() + 0.05, 1000)
+    x_grid = np.linspace(metallicity.min() - bandwidth, metallicity.max() + bandwidth, 1000)
     pdf = weighted_kde(metallicity, weights, x_grid, bandwidth=bandwidth)
 
     mode = x_grid[np.argmax(pdf)]
@@ -364,7 +364,7 @@ def gauss_metall(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
 
     # Визуализация
     plt.plot(feh_values, chi2_values, "o-", label="Chi^2")
-    plt.axhline(threshold, linestyle="--", color="gray", label="$\chi^2_{min} + 1$")
+    plt.axhline(threshold, linestyle="--", color="gray", label=r"$\chi^2_{min} + 1$")
     plt.axvline(
         feh_best, linestyle="--", color="red", label=f"Best [Fe/H] = {feh_best:.3f}"
     )
@@ -376,7 +376,7 @@ def gauss_metall(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
         alpha=0.3,
     )
     plt.xlabel("[Fe/H]")
-    plt.ylabel("$\chi^2$")
+    plt.ylabel(r"$\chi^2$")
     plt.legend()
     plt.show()
 
@@ -389,7 +389,7 @@ def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
     chi = pd_data["chi_squared"].to_numpy(float)
 
     with plt.style.context("science"):
-        _, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 8))
+        _, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 4))
         ax.set_title(r"Velocity dispersion of FeI on IRAS 07430+1115")
         ax.set_ylabel(r"$\chi^{2}$")
         ax.set_xlabel(r"Metallicity, [Fe/H]")
@@ -397,10 +397,24 @@ def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
 
         density = ax.scatter(metallicty, chi, c=velocity)
         plt.colorbar(density, label="Velocity dispersion")
-        # plt.savefig("ReddyVSZhuck.pdf", dpi=600)
         plt.show()
 
-    pass
+
+def energy_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
+    metallicty = pd_data[ratio].values
+    metallicty = [float(metallicty[x]) for x in range(len(metallicty))]
+    chi = pd_data["chi_squared"].to_numpy(float)
+
+    # with plt.style.context("science"):
+    #     _, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 4))
+    #     ax.set_title(r"Energy dispersion of FeI on IRAS 07430+1115")
+    #     ax.set_ylabel(r"$\chi^{2}$")
+    #     ax.set_xlabel(r"Metallicity, [Fe/H]")
+    #     ax.set_ylim((0, 20))
+
+    #     density = ax.scatter(metallicty, chi, c=velocity)
+    #     plt.colorbar(density, label="Velocity dispersion")
+    #     plt.show()
 
 
 def wave2velocity(wavelength: float, rest_wavelength: float) -> float:
@@ -428,19 +442,19 @@ def line_combiner(spectrum: np.ndarray, linelist: np.ndarray):
     for i in range(len(velocity_cut)):
         plt.plot(velocity_cut[i], lines_cut[i][:, 1])
         # plt.plot(np.arange(0, len(lines_cut[i][:, 1])), lines_cut[i][:, 1])
-
     plt.show()
 
 
 if __name__ == "__main__":
-    from tsfit_utils import get_model_data
     from config_loader import tsfit_output
 
     #    out_1 = "2025-02-11-17-09-42_0.04291624334452615_LTE_Fe_1D"
-    #    out_2 = "2025-02-10-11-48-42_0.616663993169006_LTE_Fe_1D"
-    #
-    out_1 = "2025-02-22-16-06-06_0.8738030062131275_LTE_Fe_1D"
-    out_2 = "2025-02-22-14-19-48_0.23837068316608268_LTE_Fe_1D"
+    #    out_2 = "2025-02-28-15-00-47_0.43364028641216623_LTE_C_1D"
+
+    out_1 = "C1_4900_0.0"
+    out_2 = "Cr1_4900_0.0"
+    r = "Mg_Fe"
+
 
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
@@ -449,12 +463,13 @@ if __name__ == "__main__":
     # pd_data_1 = clean_pd(pd_data_1, True, True)
     # pd_data_2 = clean_pd(pd_data_2, True, True)
 
-    r = "Fe_H"
-    # velocity_dispersion(pd_data_2, r)
+    # velocity_dispersion(pd_data_1, r)
+    energy_dispersion(pd_data_1)
+#     plot_metall(pd_data_1, ratio=r)
     # plot_metallVS(pd_data_1, pd_data_2, r)
-    plot_metall_KDE(pd_data_1, r)
-    plot_metall_KDE(pd_data_2, r)
-
+#     plot_metall_KDE(pd_data_1, r)
+    # plot_metall_KDE(pd_data_2, r, 0.01)
+    
     # median_analysis(pd_data_2)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
