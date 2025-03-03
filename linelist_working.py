@@ -46,10 +46,25 @@ def make_linemask(line_centers: np.ndarray, line_eps=1) -> np.ndarray:
     line_centers = line_centers.astype(float)
     return np.column_stack((line_centers, line_centers-1, line_centers+1))
 
+
+def extract_enegry(path2vald: str, element_name: str, centers_in_linemask):
+    data = np.genfromtxt(path2vald, delimiter=",", dtype=str, skip_header=3, invalid_raise=False)
+    idx = np.where(data[:, 0] == element_name)
+    element_wavelenght = data[:, 1][idx].astype(float)
+    element_energy = data[:, 2][idx].astype(float)
+    eps = 0.5
+    energy_arr = []
+    for i in range(len(centers_in_linemask)):
+        for j in range(len(element_wavelenght)):
+            if abs(centers_in_linemask[i] - element_wavelenght[j]) < eps:
+                energy_arr.append([centers_in_linemask[i], element_energy[j], int(i)])
+    return energy_arr
+
+
 if __name__ == "__main__":
     from config_loader import tsfit_output
     # path2output = "2025-02-22-16-06-06_0.8738030062131275_LTE_Fe_1D"
     # clean_after_run(tsfit_output + path2output, "/Users/beta/synth_spectrum/linemask_files/Fe/fe1_gleb2.txt")
-    element_data = extract_element("ZhuklevichGleb.006110", "'Mg 1'")
+    element_data = extract_element("C1data", "'C 1'")
     print(len(element_data))
     # np.savetxt("mg_linemask", make_linemask(element_data))
