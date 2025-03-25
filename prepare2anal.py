@@ -15,7 +15,6 @@ def velocity_tilt(template, observed):
     _, observed[:, 0] = pyasl.dopplerShift(observed[:, 0], observed[:, 1], velocity, edgeHandling="firstlast")
     return observed, velocity
 
-
 template_path = "/Users/beta/synth_spectrum/data/iraszsynth.txt"
 observed_path = "/Users/beta/synth_spectrum/iras07430.txt"
 wavelength_min, wavelength_max = 4700, 5900
@@ -25,6 +24,7 @@ template, observed = load_spectra(template_path, observed_path, wavelength_min, 
 _, observed[:, 0] = pyasl.dopplerShift(observed[:, 0], observed[:, 1], 15, edgeHandling="firstlast")
 
 velocity = 100
+
 while abs(velocity) > 0.01:
     prev_iter = velocity
     observed, velocity = velocity_tilt(template, observed)

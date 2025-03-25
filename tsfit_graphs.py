@@ -9,6 +9,7 @@ from tsfit_utils import clean_pd
 import scienceplots
 from scipy.stats import norm
 from scipy.optimize import curve_fit
+from linelist_working import extract_enegry
 
 
 def weighted_kde(x, weights, x_grid, bandwidth=0.1):
@@ -265,7 +266,9 @@ def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H", bandwidth=0.05):
     weights = 1 / chi_squared
     weights /= weights.sum()
 
-    x_grid = np.linspace(metallicity.min() - bandwidth, metallicity.max() + bandwidth, 1000)
+    x_grid = np.linspace(
+        metallicity.min() - bandwidth, metallicity.max() + bandwidth, 1000
+    )
     pdf = weighted_kde(metallicity, weights, x_grid, bandwidth=bandwidth)
 
     mode = x_grid[np.argmax(pdf)]
@@ -302,26 +305,75 @@ def plot_metall_KDE(data: pd.DataFrame, ratio: str = "Fe_H", bandwidth=0.05):
         print(f"Средняя ошибка металличности (1σ): {error:.3f}")
 
 
-def median_analysis(pd_data: pd.DataFrame):
+def teff_analysis(pd_data: pd.DataFrame, save=False, object="star"):
     column_name = "Teff"
+    wavelenght = pd_data["wave_center"].values
+    wavelenght = [float(wavelenght[x]) for x in range(len(wavelenght))]
     if np.argwhere(pd_data.columns.values == column_name) != -1:
         column_data = pd_data[column_name].values
         column_data = [float(column_data[x]) for x in range(len(column_data))]
         column_data_median = np.median(column_data)
         with plt.style.context("science"):
-            plt.title(f"{column_name} variation")
-            plt.scatter([x for x in range(len(column_data))], column_data)
-            plt.show()
-
-        print(f"Median vmic: {column_data_median}")
-        bootstrapped_medians = [
-            np.median(
-                np.random.choice(column_data, size=len(column_data), replace=True)
+            fig, ax = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+            fig.suptitle(r"$T_{eff}$ estimation of " + object)
+            ax[0].set_title(r"$T_{eff}$ variation")
+            ax[0].scatter(wavelenght, column_data, color="black", alpha=0.9)
+            ax[0].set_xlim((5000, 7000))
+            # draw a medion line
+            ax[0].plot(
+                (wavelenght[0], wavelenght[-1]),
+                (column_data_median, column_data_median),
+                ls="dashed",
+                color="crimson",
+                lw=2,
+                label=r"median $T_{eff}$ value",
             )
-            for _ in range(10**6)
-        ]
-        median_variance = np.var(bootstrapped_medians)
-        print(f"Дисперсия медианы: {median_variance}")
+            ax[0].set_xlabel(r"Wavelegth, \AA")
+            ax[1].set_ylabel(r"$T_{eff}$, K")
+            print(f"Median vmic: {column_data_median}")
+            # bootstrapped_medians = [
+            #     np.median(
+            #         np.random.choice(column_data, size=len(column_data), replace=True)
+            #     )
+            #     for _ in range(10**6)
+            # ]
+            # median_variance = np.var(bootstrapped_medians)
+            # print(f"Дисперсия медианы: {median_variance}")
+            # ax[0].fill_between(
+            #     wavelenght,
+            #     column_data_median - median_variance,
+            #     column_data_median + median_variance,
+            #     color="blue",
+            #     alpha=0.2,
+            #     label="median median_variance",
+            # )
+            lower = np.percentile(column_data, 5, axis=0)
+            upper = np.percentile(column_data, 95, axis=0)
+            lower_p = np.percentile(column_data, 16)
+            upper_p = np.percentile(column_data, 84)
+
+            ax[0].fill_between(
+                wavelenght, lower, upper, color="blue", alpha=0.2, label=r"$3\sigma$"
+            )
+            ax[0].fill_between(
+                wavelenght,
+                lower_p,
+                upper_p,
+                color="navy",
+                alpha=0.7,
+                label=r"$\sigma$",
+            )
+            ax[1].set_title(r"$T_{eff}$ histogram")
+            ax[1].hist(
+                column_data, bins=15, orientation="horizontal", color="black", alpha=0.7
+            )
+            ax[1].set_xlabel("N")
+            ax[0].legend()
+            plt.tight_layout()
+            if save:
+                plt.savefig("teff_estimation.pdf", dpi=300)
+            else:
+                plt.show()
 
 
 def gaussian(Z, A, mu, sigma):
@@ -400,21 +452,49 @@ def velocity_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
         plt.show()
 
 
-def energy_dispersion(pd_data: pd.DataFrame, ratio: str = "Fe_H"):
+def energy_dispersion(
+    pd_data: pd.DataFrame, ratio: str, path2vald: str, element_name: str
+):
     metallicty = pd_data[ratio].values
-    metallicty = [float(metallicty[x]) for x in range(len(metallicty))]
+    metallicty = np.array([float(metallicty[x]) for x in range(len(metallicty))])
     chi = pd_data["chi_squared"].to_numpy(float)
+    centers = pd_data["wave_center"].astype(float)
+    energy_arr = extract_enegry(path2vald, element_name, centers_in_linemask=centers)
+    energy_arr = np.array(energy_arr)
+    lc = energy_arr[:, 0]
+    energy = energy_arr[:, 1]
+    idx = energy_arr[:, 2].astype(int)
+    metallicty = metallicty[idx]
+    chi = chi[idx]
 
-    # with plt.style.context("science"):
-    #     _, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 4))
-    #     ax.set_title(r"Energy dispersion of FeI on IRAS 07430+1115")
-    #     ax.set_ylabel(r"$\chi^{2}$")
-    #     ax.set_xlabel(r"Metallicity, [Fe/H]")
-    #     ax.set_ylim((0, 20))
+    with plt.style.context("science"):
+        _, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 4))
+        ax.set_title(r"Energy dispersion of FeI on IRAS 07430+1115")
+        ax.set_ylabel(r"$\chi^{2}$")
+        ax.set_xlabel(r"Metallicity, [Fe/H]")
+        ax.set_ylim((0, 20))
 
-    #     density = ax.scatter(metallicty, chi, c=velocity)
-    #     plt.colorbar(density, label="Velocity dispersion")
-    #     plt.show()
+        density = ax.scatter(metallicty, chi, c=energy)
+        plt.colorbar(density, label="Velocity dispersion")
+        plt.show()
+
+
+def wavelenght_group(pd_data: pd.DataFrame, ratio: str):
+    metallicty = pd_data[ratio].values
+    metallicty = np.array([float(metallicty[x]) for x in range(len(metallicty))])
+    chi = pd_data["chi_squared"].to_numpy(float)
+    centers = pd_data["wave_center"].astype(float)
+
+    with plt.style.context("science"):
+        _, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 4))
+        ax.set_title(r"Wavelenght scatter of C I on IRAS 07430+1115")
+        ax.set_ylabel(r"$\chi^{2}$")
+        ax.set_xlabel(r"Metallicity, [Fe/H]")
+        ax.set_ylim((0, 20))
+
+        density = ax.scatter(metallicty, chi, c=centers)
+        plt.colorbar(density, label="Wavelenght")
+        plt.show()
 
 
 def wave2velocity(wavelength: float, rest_wavelength: float) -> float:
@@ -448,13 +528,10 @@ def line_combiner(spectrum: np.ndarray, linelist: np.ndarray):
 if __name__ == "__main__":
     from config_loader import tsfit_output
 
-    #    out_1 = "2025-02-11-17-09-42_0.04291624334452615_LTE_Fe_1D"
-    #    out_2 = "2025-02-28-15-00-47_0.43364028641216623_LTE_C_1D"
-
     out_1 = "C1_4900_0.0"
-    out_2 = "Cr1_4900_0.0"
-    r = "Mg_Fe"
+    out_2 = "irasz_old/teff_fe"
 
+    r = "C_Fe"
 
     pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
@@ -464,12 +541,14 @@ if __name__ == "__main__":
     # pd_data_2 = clean_pd(pd_data_2, True, True)
 
     # velocity_dispersion(pd_data_1, r)
-    energy_dispersion(pd_data_1)
-#     plot_metall(pd_data_1, ratio=r)
+    # energy_dispersion(pd_data_1, ratio="C_Fe", path2vald="C1data", element_name="'C 1'")
+    # wavelenght_group(pd_data_1, r)
+
+    # plot_metall(pd_data_1, ratio=r)
     # plot_metallVS(pd_data_1, pd_data_2, r)
-#     plot_metall_KDE(pd_data_1, r)
-    # plot_metall_KDE(pd_data_2, r, 0.01)
-    
-    # median_analysis(pd_data_2)
+    # plot_metall_KDE(pd_data_1, r)
+    # plot_metall_KDE(pd_data_2, r)
+
+    # teff_analysis(pd_data_2, object="IRAS Z02229+6208", save=False)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)
