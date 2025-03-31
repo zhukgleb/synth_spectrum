@@ -209,6 +209,7 @@ def make_txt_from_spectra(working_folder: str, verbose=True, cutbad=True):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    import numpy as np
 
 #    working_folder = "/home/lambda/stellar_chem/iras07430/"
 #    a = make_txt_from_spectra(working_folder, cutbad=True)
@@ -221,8 +222,8 @@ if __name__ == "__main__":
 # plt.plot(fds[0], data[0])
 # ccm = read_ccm(working_folder + "/s693012s.ccm")
 
-# data = tab_spectra("/home/lambda/dech20t.tab")
-# print(data)
+data = tab_spectra("data/iras05113.tab")
+print(data)
 # plt.plot(data[:, 0], data[:, 1])
 # plt.show()
 
@@ -233,6 +234,7 @@ if __name__ == "__main__":
 # spectrum = genfromtxt(
 #    "/home/lambda/TSFitPy/input_files/observed_spectra/iras2020.txt"
 # )
-# new_data = glue_spectrum(data, True)
+new_data = glue_spectrum(data, True)
 # plt.plot(new_data[:, 0], new_data[:, 1])
 # plt.show()
+np.savetxt("data/iras05113_unshifted.txt", new_data)

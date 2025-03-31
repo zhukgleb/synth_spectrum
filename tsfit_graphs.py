@@ -8,7 +8,6 @@ from typing import List, Union
 from tsfit_utils import clean_pd
 import scienceplots
 from scipy.stats import norm
-from scipy.optimize import curve_fit
 from linelist_working import extract_enegry
 
 
@@ -309,6 +308,9 @@ def teff_analysis(pd_data: pd.DataFrame, save=False, object="star"):
     column_name = "Teff"
     wavelenght = pd_data["wave_center"].values
     wavelenght = [float(wavelenght[x]) for x in range(len(wavelenght))]
+    errors = pd_data["chi_squared"].values
+    errors = [float(errors[x]) for x in range(len(errors))]
+
     if np.argwhere(pd_data.columns.values == column_name) != -1:
         column_data = pd_data[column_name].values
         column_data = [float(column_data[x]) for x in range(len(column_data))]
@@ -318,6 +320,7 @@ def teff_analysis(pd_data: pd.DataFrame, save=False, object="star"):
             fig.suptitle(r"$T_{eff}$ estimation of " + object)
             ax[0].set_title(r"$T_{eff}$ variation")
             ax[0].scatter(wavelenght, column_data, color="black", alpha=0.9)
+            ax[0].errorbar(wavelenght, column_data, errors, marker="o", ls=" ")
             ax[0].set_xlim((5000, 7000))
             # draw a medion line
             ax[0].plot(
@@ -352,6 +355,9 @@ def teff_analysis(pd_data: pd.DataFrame, save=False, object="star"):
             lower_p = np.percentile(column_data, 16)
             upper_p = np.percentile(column_data, 84)
 
+            print(
+                f"percentile is \n lower:{lower_p} \n upper: {upper_p} \n std: {np.std(column_data)}"
+            )
             ax[0].fill_between(
                 wavelenght, lower, upper, color="blue", alpha=0.2, label=r"$3\sigma$"
             )
@@ -528,12 +534,12 @@ def line_combiner(spectrum: np.ndarray, linelist: np.ndarray):
 if __name__ == "__main__":
     from config_loader import tsfit_output
 
-    out_1 = "C1_4900_0.0"
-    out_2 = "irasz_old/teff_fe"
+    out_1 = "Fe1_4900_0.0"
+    out_2 = "2025-03-31-16-46-54_0.7936911305143918_LTE_Fe_1D"
 
-    r = "C_Fe"
+    r = "Fe_H"
 
-    pd_data_1 = get_model_data(tsfit_output + out_1)
+    # pd_data_1 = get_model_data(tsfit_output + out_1)
     pd_data_2 = get_model_data(tsfit_output + out_2)
     # line_combiner(spectrum, c_linemask)
 
@@ -549,6 +555,6 @@ if __name__ == "__main__":
     # plot_metall_KDE(pd_data_1, r)
     # plot_metall_KDE(pd_data_2, r)
 
-    # teff_analysis(pd_data_2, object="IRAS Z02229+6208", save=False)
+    teff_analysis(pd_data_2, object="IRAS Z02229+6208", save=False)
     # plot_ion_balance(pd_data_2)
     # hist_estimation(pd_data_2, 30)

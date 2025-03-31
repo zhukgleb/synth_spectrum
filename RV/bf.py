@@ -6,6 +6,10 @@ from tqdm import tqdm
 from scipy.signal import find_peaks
 import scienceplots
 
+"""
+CUT OFF EMISSION!!
+"""
+
 
 def load_spectra(template_path, observed_path, wavelength_min, wavelength_max):
     template = np.loadtxt(template_path)  # [λ, I]
@@ -181,7 +185,7 @@ def main():
     wavelength_min, wavelength_max = 4700, 5900
     c = 299792.458  # скорость света, км/с
     v_grid = np.linspace(-20, 20, 300)  # сетка скоростей, км/с
-    segment_width = 8
+    segment_width = 50
 
     template, observed = load_spectra(
         template_path, observed_path, wavelength_min, wavelength_max
