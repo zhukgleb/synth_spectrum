@@ -11,12 +11,18 @@ def spectrum_finder(folder_data: list) -> list:
             spectrum_list.append(str(folder_data[i]))
     return spectrum_list
 
+def data_graber(path2spectrum: Path) -> np.ndarray:
+    data = np.genfromtxt(path2spectrum, comments="#")
+    return data
 
 def read_spectrum_grid(path2grid: Path) -> np.ndarray:
     folder_data = os.listdir(path2grid)
     spectrum_list = spectrum_finder(folder_data)
-    print(spectrum_list)
-    return np.ndarray([0])
+
+    data = []
+    for i in range(len(spectrum_list)):
+        data.append(data_graber(path2grid / spectrum_list[i]))
+    return data
 
 
 if __name__ == "__main__":
