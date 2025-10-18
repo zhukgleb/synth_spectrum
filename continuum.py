@@ -371,7 +371,6 @@ def main(save=False):
     plt.title('best fit comp')
     plt.grid(True, alpha=0.3)
     
-    # 3. Сходимость алгоритма
     plt.subplot(2, 2, 3)
     plt.plot(history['distances'], 'bo-', markersize=4)
     plt.xlabel('iteration')
