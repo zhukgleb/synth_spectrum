@@ -393,7 +393,7 @@ def main(save=False):
         model_spectra,
         model_params,
         continuum_degree=4,
-        n_iterations=30,
+        n_iterations=100,
     )
 
     print("\nStarting continuum fitting...")
